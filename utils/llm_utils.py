@@ -8,9 +8,20 @@ from utils.path_utils import resolve_path
 PROVIDER_TEMPERATURES = {
     "openai": 1.0,
     "openai_responses": 1.0,
+    "openrouter": 1.0,
     "litellm": 1.0,
     "together": 1.0,
 }
+
+
+def is_openrouter_model(model_name: str) -> bool:
+    """True if model_name is listed under the openrouter org in config.yaml.
+
+    Matched on the exact slug: OpenRouter ids keep their provider prefix
+    ("openai/gpt-5.6-sol"), which the openai path would otherwise strip.
+    """
+    return model_name in get_org_model_mapping().get("openrouter", [])
+
 
 def get_model_org(model_name: str) -> str:
     """Determine the organization for a given model name.
@@ -24,6 +35,11 @@ def get_model_org(model_name: str) -> str:
         "openai": "openai_responses",
     }
 
+    # openrouter is checked first and on the exact slug, so "openai/gpt-5.6-sol"
+    # does not fall through to the native openai (Responses API) provider.
+    if is_openrouter_model(model_name):
+        return "openrouter"
+
     # Handle openai/ prefix (e.g., "openai/gpt-5.2" -> "gpt-5.2")
     lookup_name = model_name
     if model_name.startswith("openai/"):
@@ -32,6 +48,8 @@ def get_model_org(model_name: str) -> str:
     # First check if the model is in the explicit mapping
     org_model_mapping = get_org_model_mapping()
     for org, models in org_model_mapping.items():
+        if org == "openrouter":
+            continue
         if model_name in models or lookup_name in models:
             # Map org name to provider name if needed
             return ORG_TO_PROVIDER.get(org, org)
@@ -52,9 +70,14 @@ def get_appropriate_llm(model_name: str, org: str = None, max_tokens: int | None
 
     If org is not provided, it will be determined from the model name.
     """
-    # Strip openai/ prefix if present for both org lookup and LLM creation
+    # Strip openai/ prefix if present for both org lookup and LLM creation.
+    # OpenRouter slugs keep their prefix — it is part of the routed model id.
     actual_model_name = model_name
-    if model_name.startswith("openai/") and 'gpt-oss-120b' not in model_name:
+    if (
+        model_name.startswith("openai/")
+        and 'gpt-oss-120b' not in model_name
+        and not is_openrouter_model(model_name)
+    ):
         actual_model_name = model_name[7:]  # Strip "openai/"
 
     # If org is not provided, determine it from the model name

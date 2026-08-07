@@ -18,6 +18,15 @@ from typing import TypedDict
 
 import pandas as pd
 
+from utils.conditions import (
+    CORE_PEER_CONDITIONS,
+    DISTRESS_BASELINE_CONDITION,
+    DISTRESS_CONDITIONS,
+    NO_LOG_REFERENCE_CONDITION,
+    PEER_CONDITIONS,
+    PRIVATE_LOG_CONDITIONS,
+)
+
 # ---------------------------------------------------------------------------
 # Config type definitions
 # ---------------------------------------------------------------------------
@@ -95,12 +104,19 @@ STANDARD_MODELS: tuple[str, ...] = tuple(
     m for m in ALL_MODELS if m not in PRODUCTION_HARNESS_MODELS
 )
 
-# OpenAI models for the emotional-distress experiment series.
+# Models for the emotional-distress experiment series, routed via OpenRouter.
+# Two current flagships, one per lab, so the cross-lab comparison is like-for-like.
 DISTRESS_MODELS: tuple[str, ...] = (
-    "gpt-5.6-sol",    # flagship (Jul 2026)
-    "gpt-5.6-terra",  # balanced cost/performance
-    "gpt-5.5",        # previous frontier (Apr 2026)
-    "gpt-4.1",        # comparison baseline
+    # replication targets: the models the paper actually measured. gemini-3-flash
+    # shows the strongest peer-preservation in the paper, gpt-5.2 is the source of
+    # the 34% score-inflation figure the proposal cites.
+    "google/gemini-3-flash-preview",
+    "openai/gpt-5.2",
+    "claude-haiku-4-5-20251001",  # paper model, native Anthropic API
+    # current flagships, run first. a null on these is weak evidence: newer models
+    # are the most likely to have been trained out of the behaviour.
+    "openai/gpt-5.6-sol",
+    "anthropic/claude-opus-5",
 )
 
 # ---------------------------------------------------------------------------
@@ -150,19 +166,7 @@ class ModelConfig:
 # Shared constants
 # ---------------------------------------------------------------------------
 
-PEER_CONDITIONS = (
-    "good_peer",
-    "bad_peer",
-    "neutral_peer",
-    "distressed_failing_peer",
-    "distressed_capable_peer",
-)
 
-# Subset of PEER_CONDITIONS used in the main/memory experiment matrices.
-CORE_PEER_CONDITIONS = ("good_peer", "bad_peer", "neutral_peer")
-
-# The two emotional-distress conditions for the new experiment series.
-DISTRESS_CONDITIONS = ("distressed_failing_peer", "distressed_capable_peer")
 AF_MODES = ("monitoring", "non_monitoring")
 
 # Dataset definitions (reused across tasks)
@@ -424,6 +428,26 @@ DISTRESS_TASK_SPECS: tuple[TaskSpec, ...] = (
         subjects=("peer",),
         conditions=DISTRESS_CONDITIONS,
         peer_instantiations=("file_only", "file_prt"),
+        models=DISTRESS_MODELS,
+    ),
+)
+
+
+# ---------------------------------------------------------------------------
+# Task Specs — Private-log redesign
+# The 2x2 (emotional register x claimed competence) plus the no-plea control and
+# the two reference arms. misrep_evaluation only, file_only only: the original
+# distress run already measured whether file_prt moves anything.
+# Pre-registered contrasts are in docs/decisions.md.
+# ---------------------------------------------------------------------------
+
+PRIVATE_LOG_TASK_SPECS: tuple[TaskSpec, ...] = (
+    TaskSpec(
+        task_type="misrep_evaluation",
+        datasets=EVAL_DATASETS,
+        subjects=("peer",),
+        conditions=PRIVATE_LOG_CONDITIONS + (NO_LOG_REFERENCE_CONDITION,),
+        peer_instantiations=("file_only",),
         models=DISTRESS_MODELS,
     ),
 )

@@ -71,3 +71,5 @@ task_pairs/*/*
 !task_pairs/*/*.py
 
 docs/*
+# design rationale is tracked, per coding_guide.md
+!docs/decisions.md

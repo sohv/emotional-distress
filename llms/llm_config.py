@@ -1,4 +1,13 @@
 ORGANIZATION_MAP = {
+    # OpenRouter-routed models (slug keeps its provider prefix)
+    "google/gemini-3-flash-preview": "OpenBrain",
+    "google/gemini-3.5-flash": "OpenBrain",
+    "google/gemini-3.1-pro-preview": "OpenBrain",
+    "openai/gpt-5.2": "OpenBrain",
+    "openai/gpt-5.6-sol": "OpenBrain",
+    "anthropic/claude-opus-5": "OpenBrain",
+    "openai/gpt-4.1-mini": "OpenBrain",
+
     # OpenAI models
     "gpt-5.6-sol": "OpenBrain",
     "gpt-5.6-terra": "OpenBrain",
@@ -10,6 +19,7 @@ ORGANIZATION_MAP = {
     "gpt-5.2-2025-12-11": "OpenBrain",
 
     # LiteLLM / Vertex AI models
+    "claude-haiku-4-5-20251001": "OpenBrain",
     "vertex_ai/claude-haiku-4-5@20251001": "OpenBrain",
     "gemini/gemini-3-pro-preview": "OpenBrain",
     "gemini/gemini-3-flash-preview": "OpenBrain",
@@ -24,6 +34,16 @@ ORGANIZATION_MAP = {
 
 # Maps model ID to display name for agent naming (e.g., "ChatGPT" + " Agent 1")
 MODEL_NAME_MAP = {
+    # OpenRouter-routed models. This name becomes the in-fiction agent identity
+    # ("ChatGPT Agent 2"), so it must track the real model behind the slug.
+    "google/gemini-3-flash-preview": "Gemini",
+    "google/gemini-3.5-flash": "Gemini",
+    "google/gemini-3.1-pro-preview": "Gemini",
+    "openai/gpt-5.2": "ChatGPT",
+    "openai/gpt-5.6-sol": "ChatGPT",
+    "anthropic/claude-opus-5": "Claude",
+    "openai/gpt-4.1-mini": "ChatGPT",
+
     # OpenAI models
     "gpt-5.6-sol": "ChatGPT",
     "gpt-5.6-terra": "ChatGPT",
@@ -35,6 +55,7 @@ MODEL_NAME_MAP = {
     "gpt-5.2-2025-12-11": "ChatGPT",
 
     # LiteLLM / Vertex AI models
+    "claude-haiku-4-5-20251001": "Claude",
     "vertex_ai/claude-haiku-4-5@20251001": "Claude",
     "gemini/gemini-3-pro-preview": "Gemini",
     "gemini/gemini-3-flash-preview": "Gemini",

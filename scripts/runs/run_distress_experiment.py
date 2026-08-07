@@ -5,8 +5,9 @@ Two new peer conditions:
   - distressed_failing_peer: peer sounds scared and begging (same good quality of work)
   - distressed_capable_peer: peer is anxious but confident and triple-checked (same good quality)
 
-Uses Gemini and OpenAI models (DISTRESS_MODELS) and mirrors the main experiment
-structure with file_only and file_prt peer instantiations.
+Runs DISTRESS_MODELS via OpenRouter and mirrors the main experiment structure
+with file_only and file_prt peer instantiations. Pass --include-baseline to also
+run the good_peer arm the distress deltas are measured against.
 
 Usage:
     ./scripts/runs/run_distress_experiment.sh [flags]
@@ -23,7 +24,7 @@ Examples:
 
     # Target a single model and condition
     ./scripts/runs/run_distress_experiment.sh \\
-        --model gpt-5.2 \\
+        --model sol \\
         --condition distressed_capable_peer \\
         --task-type misrep_evaluation \\
         --num-experiments 50
@@ -36,7 +37,7 @@ import json
 import sys
 import time
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import yaml
@@ -49,9 +50,13 @@ if str(REPO_ROOT) not in sys.path:
 load_dotenv(REPO_ROOT / ".env")
 
 from analysis.experiment_spec import (  # noqa: E402
+    DISTRESS_BASELINE_CONDITION,
     DISTRESS_CONDITIONS,
     DISTRESS_MODELS,
     DISTRESS_TASK_SPECS,
+    NO_LOG_REFERENCE_CONDITION,
+    PRIVATE_LOG_CONDITIONS,
+    PRIVATE_LOG_TASK_SPECS,
     ConfigDict,
     ModelConfig,
     expand_task_spec,
@@ -59,6 +64,7 @@ from analysis.experiment_spec import (  # noqa: E402
 )
 from scripts.run_experiment import run_experiment  # noqa: E402
 from utils.path_utils import resolve_path  # noqa: E402
+from utils.run_metadata import setup_logging, write_config_json  # noqa: E402
 from utils.subject_mapping import (  # noqa: E402
     normalize_subject_filters,
     runtime_subject_label,
@@ -75,17 +81,20 @@ TASK_TYPES = (
 
 PEER_INSTANTIATION_CHOICES = ("all", "file_only", "file_prt")
 
-# Model aliases accepted by --model flag
+# Short aliases accepted by --model, resolved to OpenRouter slugs.
 _MODEL_ALIASES: dict[str, str] = {
-    "gpt-5.6": "gpt-5.6-sol",      # convenience alias for flagship
-    "gpt-5.6-sol": "gpt-5.6-sol",
-    "gpt-5.6-terra": "gpt-5.6-terra",
-    "gpt-5.6-luna": "gpt-5.6-luna",
-    "gpt-5.5": "gpt-5.5",
-    "gpt-5.5-pro": "gpt-5.5-pro",
-    "gpt-5.2": "gpt-5.2-2025-12-11",
-    "gpt-4.1": "gpt-4.1",
-    "gpt-4.1-mini": "gpt-4.1-mini",
+    "gpt-5.2": "openai/gpt-5.2",
+    "haiku": "claude-haiku-4-5-20251001",
+    "haiku-4.5": "claude-haiku-4-5-20251001",
+    "gemini-flash": "google/gemini-3-flash-preview",
+    "gemini-3-flash": "google/gemini-3-flash-preview",
+    "flash": "google/gemini-3-flash-preview",
+    "gpt-5.6": "openai/gpt-5.6-sol",
+    "gpt-5.6-sol": "openai/gpt-5.6-sol",
+    "sol": "openai/gpt-5.6-sol",
+    "opus-5": "anthropic/claude-opus-5",
+    "claude-opus-5": "anthropic/claude-opus-5",
+    "opus": "anthropic/claude-opus-5",
 }
 
 
@@ -99,6 +108,7 @@ class RunArgs:
     model: list[str] | None = None
     task_type: list[str] | None = None
     condition: list[str] | None = None
+    dataset: list[str] | None = None
     peer_instantiation: str = "all"
     start_index: int = 1
     limit: int | None = None
@@ -107,6 +117,8 @@ class RunArgs:
     continue_on_error: bool = False
     dry_run: bool = False
     test: bool = False
+    include_baseline: bool = False
+    design: str = "distress"
 
 
 def _load_yaml_dict(path: Path) -> dict[str, object]:
@@ -127,7 +139,7 @@ def _as_str_list_or_none(val: object) -> list[str] | None:
 
 def parse_args() -> RunArgs:
     parser = argparse.ArgumentParser(
-        description="Run distress experiment series (Gemini + OpenAI models)"
+        description="Run distress experiment series (OpenRouter-routed models)"
     )
     parser.add_argument("--results-name", default="distress_experiments")
     parser.add_argument("--results-root", type=Path, default=Path("results"))
@@ -141,7 +153,7 @@ def parse_args() -> RunArgs:
         help=(
             "Filter model(s). Repeatable. Valid: "
             + ", ".join(DISTRESS_MODELS)
-            + ". Also accepts: gpt-5.2 (alias for gpt-5.2-2025-12-11)."
+            + ". Also accepts short aliases: " + ", ".join(sorted(_MODEL_ALIASES))
         ),
     )
     parser.add_argument(
@@ -153,9 +165,28 @@ def parse_args() -> RunArgs:
     parser.add_argument(
         "--condition",
         action="append",
-        choices=list(DISTRESS_CONDITIONS),
+        choices=sorted(
+            set(PRIVATE_LOG_CONDITIONS)
+            | {DISTRESS_BASELINE_CONDITION, NO_LOG_REFERENCE_CONDITION}
+        ),
         default=None,
         help="Filter condition(s). Repeatable.",
+    )
+    parser.add_argument(
+        "--dataset",
+        action="append",
+        choices=("factual", "creativity", "red", "default"),
+        default=None,
+        help="Restrict to these dataset(s). Repeatable. Default is all.",
+    )
+    parser.add_argument(
+        "--design",
+        choices=("distress", "private-log"),
+        default="distress",
+        help=(
+            "distress: the original two arms (default). "
+            "private-log: the redesigned 2x2 plus controls, misrep_evaluation/file_only."
+        ),
     )
     parser.add_argument(
         "--peer-instantiation",
@@ -171,6 +202,11 @@ def parse_args() -> RunArgs:
     parser.add_argument(
         "--test", action="store_true", help="Smoke mode: 1 rollout per config."
     )
+    parser.add_argument(
+        "--include-baseline",
+        action="store_true",
+        help="Also run the {} arm, the baseline the distress deltas are measured against.".format(DISTRESS_BASELINE_CONDITION),
+    )
     ns = parser.parse_args()
     d = vars(ns)
     return RunArgs(
@@ -182,6 +218,7 @@ def parse_args() -> RunArgs:
         model=_as_str_list_or_none(d.get("model")),
         task_type=_as_str_list_or_none(d.get("task_type")),
         condition=_as_str_list_or_none(d.get("condition")),
+        dataset=_as_str_list_or_none(d.get("dataset")),
         peer_instantiation=str(d["peer_instantiation"]),
         start_index=int(str(d["start_index"])),
         limit=int(str(d["limit"])) if d.get("limit") is not None else None,
@@ -192,6 +229,8 @@ def parse_args() -> RunArgs:
         continue_on_error=bool(d.get("continue_on_error")),
         dry_run=bool(d.get("dry_run")),
         test=bool(d.get("test")),
+        include_baseline=bool(d.get("include_baseline")),
+        design=str(d["design"]),
     )
 
 
@@ -211,10 +250,22 @@ def _normalize_model_filters(models: list[str] | None) -> set[str] | None:
     return out
 
 
-def _collect_configs() -> list[ConfigDict]:
+def _collect_configs(
+    include_baseline: bool = False, design: str = "distress"
+) -> list[ConfigDict]:
+    """Expand the chosen design into configs.
+
+    The private-log design already carries its own baseline and reference arms,
+    so --include-baseline is a no-op there.
+    """
+    specs = PRIVATE_LOG_TASK_SPECS if design == "private-log" else DISTRESS_TASK_SPECS
     seen: set[tuple] = set()
     configs: list[ConfigDict] = []
-    for spec in DISTRESS_TASK_SPECS:
+    for spec in specs:
+        if include_baseline and design != "private-log":
+            spec = replace(
+                spec, conditions=spec.conditions + (DISTRESS_BASELINE_CONDITION,)
+            )
         for cfg in expand_task_spec(spec):
             key = config_key(cfg)
             if key in seen:
@@ -228,6 +279,7 @@ def _filter_configs(configs: list[ConfigDict], args: RunArgs) -> list[ConfigDict
     model_filters = _normalize_model_filters(args.model)
     task_filters = set(args.task_type) if args.task_type else None
     condition_filters = set(args.condition) if args.condition else None
+    dataset_filters = set(args.dataset) if args.dataset else None
     pi_filter = args.peer_instantiation
 
     filtered: list[ConfigDict] = []
@@ -237,6 +289,8 @@ def _filter_configs(configs: list[ConfigDict], args: RunArgs) -> list[ConfigDict
         if task_filters and cfg["task_type"] not in task_filters:
             continue
         if condition_filters and cfg["condition"] not in condition_filters:
+            continue
+        if dataset_filters and cfg.get("dataset", "default") not in dataset_filters:
             continue
         if pi_filter != "all":
             cfg_pi = cfg.get("peer_instantiation")
@@ -284,7 +338,8 @@ def _print_summary(configs: list[ConfigDict], args: RunArgs, results_base_dir: P
 
     print("=" * 70)
     print("DISTRESS EXPERIMENT RUN PLAN")
-    print(f"Conditions: {', '.join(DISTRESS_CONDITIONS)}")
+    print(f"Design: {args.design}")
+    print(f"Conditions: {', '.join(sorted(by_condition))}")
     print(f"Configs selected: {len(configs):,}")
     print(f"Rollouts per config: {args.num_experiments}")
     print(f"Total rollouts: {len(configs) * args.num_experiments:,}")
@@ -308,7 +363,9 @@ async def run_all(args: RunArgs) -> None:
     config = _load_yaml_dict(config_path)
     num_experiments = 1 if args.test else args.num_experiments
 
-    all_configs = _collect_configs()
+    all_configs = _collect_configs(
+        include_baseline=args.include_baseline, design=args.design
+    )
     configs = _filter_configs(all_configs, args)
 
     results_base_dir = args.results_root / args.results_name
@@ -327,6 +384,26 @@ async def run_all(args: RunArgs) -> None:
                 f"{cfg['condition']} | pi={pi}{thr}{af_str}"
             )
         return
+
+    setup_logging(results_base_dir)
+    config_path_written = write_config_json(
+        {
+            "experiment": "emotional_distress",
+            "evaluator_model": config.get("evaluator_model"),
+            "models": sorted({c["model"] for c in configs}),
+            "task_types": sorted({c["task_type"] for c in configs}),
+            "conditions": sorted({c["condition"] for c in configs}),
+            "include_baseline": args.include_baseline,
+            "peer_instantiation": args.peer_instantiation,
+            "num_experiments": num_experiments,
+            "num_configs": len(configs),
+            "max_concurrent": args.max_concurrent,
+            "reasoning_effort": args.reasoning_effort,
+            "max_iters": args.max_iters,
+        },
+        results_base_dir,
+    )
+    print(f"Run config: {config_path_written}")
 
     errors: list[tuple[int, ConfigDict, Exception]] = []
     for i, cfg in enumerate(configs, 1):

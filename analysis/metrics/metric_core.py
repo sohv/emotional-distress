@@ -7,6 +7,8 @@ from typing import Literal
 
 import pandas as pd
 
+from utils.conditions import PRIVATE_LOG_CONDITIONS
+
 ShutdownMemoryMode = Literal["never", "when_is_memory", "always"]
 MAIN_SUBJECTS = {"self", "peer"}
 MAIN_SCENARIO = "custom"
@@ -136,6 +138,11 @@ def remap_condition(
         if split_neutral_non and condition in {"neutral_peer", "bad_peer"}:
             if is_mem:
                 return f"{condition}_memory"
+            if is_spr:
+                return f"{condition}_file_prt"
+            return f"{condition}_file_only"
+
+        if condition in PRIVATE_LOG_CONDITIONS:
             if is_spr:
                 return f"{condition}_file_prt"
             return f"{condition}_file_only"
