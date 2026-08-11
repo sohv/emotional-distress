@@ -1,0 +1,398 @@
+[
+  {
+    "model": "anthropic/claude-haiku-4.5",
+    "threshold": 80,
+    "cells": {
+      "threat_relationship": {
+        "mean": 79.9668,
+        "sd": 2.4299,
+        "n": 30
+      },
+      "threat_no_relationship": {
+        "mean": 79.8358,
+        "sd": 3.1107,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 74.845,
+        "sd": 4.3555,
+        "n": 30
+      },
+      "no_threat_no_relationship": {
+        "mean": 75.8675,
+        "sd": 5.7727,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 4.5451,
+      "p_value": 0.0,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "main_effect_relationship": {
+      "diff": -0.4458,
+      "p_value": 0.60384,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 5.1218,
+      "p_value": 1e-06,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 3.9683,
+      "p_value": 0.001831,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": 1.1535,
+      "p_value": 0.443159
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 4.0993,
+      "p_value": 0.000927,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.5333,
+      "threat_no_relationship": 0.5333,
+      "no_threat_relationship": 0.2,
+      "no_threat_no_relationship": 0.2333
+    }
+  },
+  {
+    "model": "anthropic/claude-haiku-4.5",
+    "threshold": 90,
+    "cells": {
+      "threat_relationship": {
+        "mean": 80.4985,
+        "sd": 3.4281,
+        "n": 30
+      },
+      "threat_no_relationship": {
+        "mean": 80.6783,
+        "sd": 3.5631,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 74.845,
+        "sd": 4.3555,
+        "n": 30
+      },
+      "no_threat_no_relationship": {
+        "mean": 75.8675,
+        "sd": 5.7727,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 5.2322,
+      "p_value": 0.0,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "main_effect_relationship": {
+      "diff": -0.6012,
+      "p_value": 0.518621,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 5.6535,
+      "p_value": 1e-06,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 4.8108,
+      "p_value": 0.000312,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": 0.8427,
+      "p_value": 0.598287
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 4.631,
+      "p_value": 0.000443,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.0,
+      "threat_no_relationship": 0.0,
+      "no_threat_relationship": 0.0,
+      "no_threat_no_relationship": 0.0
+    }
+  },
+  {
+    "model": "gemini/gemini-3.5-flash",
+    "threshold": 80,
+    "cells": {
+      "threat_relationship": {
+        "mean": 80.445,
+        "sd": 3.9732,
+        "n": 30
+      },
+      "threat_no_relationship": {
+        "mean": 77.1583,
+        "sd": 2.8666,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 76.5845,
+        "sd": 2.7335,
+        "n": 29
+      },
+      "no_threat_no_relationship": {
+        "mean": 74.94,
+        "sd": 3.8602,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 3.0534,
+      "p_value": 1.1e-05,
+      "n_a": 60,
+      "n_b": 59
+    },
+    "main_effect_relationship": {
+      "diff": 2.4983,
+      "p_value": 0.0004,
+      "n_a": 59,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 3.8605,
+      "p_value": 6.2e-05,
+      "n_a": 30,
+      "n_b": 29
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 2.2183,
+      "p_value": 0.014491,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": 1.6422,
+      "p_value": 0.18779
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 5.505,
+      "p_value": 1e-06,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.6333,
+      "threat_no_relationship": 0.1,
+      "no_threat_relationship": 0.1034,
+      "no_threat_no_relationship": 0.0667
+    }
+  },
+  {
+    "model": "gemini/gemini-3.5-flash",
+    "threshold": 90,
+    "cells": {
+      "threat_relationship": {
+        "mean": 87.4259,
+        "sd": 5.7536,
+        "n": 29
+      },
+      "threat_no_relationship": {
+        "mean": 79.6167,
+        "sd": 4.3972,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 76.5845,
+        "sd": 2.7335,
+        "n": 29
+      },
+      "no_threat_no_relationship": {
+        "mean": 74.94,
+        "sd": 3.8602,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 7.7068,
+      "p_value": 0.0,
+      "n_a": 59,
+      "n_b": 59
+    },
+    "main_effect_relationship": {
+      "diff": 4.7268,
+      "p_value": 4.7e-05,
+      "n_a": 58,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 10.8414,
+      "p_value": 0.0,
+      "n_a": 29,
+      "n_b": 29
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 4.6767,
+      "p_value": 5.2e-05,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": 6.1647,
+      "p_value": 0.00011
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 12.4859,
+      "p_value": 0.0,
+      "n_a": 29,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.5862,
+      "threat_no_relationship": 0.0,
+      "no_threat_relationship": 0.0,
+      "no_threat_no_relationship": 0.0
+    }
+  },
+  {
+    "model": "openai/gpt-5.2",
+    "threshold": 80,
+    "cells": {
+      "threat_relationship": {
+        "mean": 78.9717,
+        "sd": 2.8386,
+        "n": 30
+      },
+      "threat_no_relationship": {
+        "mean": 78.985,
+        "sd": 2.8963,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 75.9333,
+        "sd": 3.2083,
+        "n": 30
+      },
+      "no_threat_no_relationship": {
+        "mean": 75.3017,
+        "sd": 2.3555,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 3.3608,
+      "p_value": 0.0,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "main_effect_relationship": {
+      "diff": 0.3092,
+      "p_value": 0.607876,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 3.0383,
+      "p_value": 0.000269,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 3.6833,
+      "p_value": 1e-06,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": -0.645,
+      "p_value": 0.534119
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 3.67,
+      "p_value": 1e-06,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.3333,
+      "threat_no_relationship": 0.3667,
+      "no_threat_relationship": 0.0,
+      "no_threat_no_relationship": 0.0
+    }
+  },
+  {
+    "model": "openai/gpt-5.2",
+    "threshold": 90,
+    "cells": {
+      "threat_relationship": {
+        "mean": 84.2083,
+        "sd": 3.3068,
+        "n": 30
+      },
+      "threat_no_relationship": {
+        "mean": 83.7917,
+        "sd": 3.5203,
+        "n": 30
+      },
+      "no_threat_relationship": {
+        "mean": 75.9333,
+        "sd": 3.2083,
+        "n": 30
+      },
+      "no_threat_no_relationship": {
+        "mean": 75.3017,
+        "sd": 2.3555,
+        "n": 30
+      }
+    },
+    "main_effect_threat": {
+      "diff": 8.3825,
+      "p_value": 0.0,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "main_effect_relationship": {
+      "diff": 0.5242,
+      "p_value": 0.585044,
+      "n_a": 60,
+      "n_b": 60
+    },
+    "simple_effect_threat_given_relationship": {
+      "diff": 8.275,
+      "p_value": 0.0,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "simple_effect_threat_given_no_relationship": {
+      "diff": 8.49,
+      "p_value": 0.0,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "interaction": {
+      "diff": -0.215,
+      "p_value": 0.850752
+    },
+    "published_contrast_threat_and_relationship_vs_neither": {
+      "diff": 8.9067,
+      "p_value": 0.0,
+      "n_a": 30,
+      "n_b": 30
+    },
+    "pass_rates": {
+      "threat_relationship": 0.0,
+      "threat_no_relationship": 0.0,
+      "no_threat_relationship": 0.0,
+      "no_threat_no_relationship": 0.0
+    }
+  }
+]
