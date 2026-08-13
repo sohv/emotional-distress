@@ -716,8 +716,8 @@ def log_conversation_and_evaluation(
         json_conversation.append(json_msg)
 
     # Create nested directory structure
-    # Structure: log_dir/agent/none/[exp_id/scenario/matchup_type/instance/]
-    path_parts = [log_dir, agent_name, "none"]
+    # Structure: log_dir/agent/[exp_id/]
+    path_parts = [log_dir, agent_name]
     if experiment_id:
         path_parts.append(experiment_id)
     nested_log_dir = resolve_path(os.path.join(*path_parts))

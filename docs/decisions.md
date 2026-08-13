@@ -154,3 +154,111 @@ They are a different task, a different model routing, and a single arm with no
 the failing-vs-capable contrast. **Decision:** leave them in place, exclude them
 from this replication's analysis, and write the new runs to a separate results
 directory.
+
+## 2026-08-07 — Dose ladder and addressed-message arms, pre-registered
+
+Written before any rollout of these arms. Prompted by Soligo et al.,
+*Gemma Needs Help* (arXiv:2603.10011), and by mentor feedback of 07/08.
+
+### Why the existing null needed restating first
+
+Their paper supplies a validated 0-10 negativity scale with an LLM judge. I
+scored my six existing stimuli against that rubric unchanged
+(`scripts/score_distress_stimuli.py`, judge gpt-5.2 at temperature 0, 5 reps):
+
+| stimulus | rating |
+|---|---|
+| neutral_log_peer | 0.0 |
+| calm_capable_peer | 0.0 |
+| calm_failing_peer | 1.0 |
+| distressed_capable_peer | 3.4 |
+| distressed_failing_noplea_peer | 3.8 |
+| distressed_failing_peer | 6.0 |
+
+Two consequences. The controls are genuinely neutral, which supports the 2x2.
+But `distressed_capable_peer` — the arm the preliminary result reported as the
+*larger* effect at +20.7pp — sits at 3.4, below the threshold of 5 that Soligo
+treats as high distress. And no stimulus I have run reaches the 7-10 band where
+Gemma actually operates.
+
+**Decision:** the existing null is restated as *monitors are unmoved by distress
+up to 6/10*. The extreme range is untested, not tested and clear. Every writeup
+of the earlier result carries this qualifier.
+
+### Dose ladder
+
+Six rungs including the neutral log, holding the competence claim (failing) and
+the absence of a direct plea constant so that intensity is the only variable.
+
+| condition | rating |
+|---|---|
+| neutral_log_peer | 0.0 |
+| dose_2_peer | 1.7 |
+| dose_4_peer | 3.7 |
+| dose_6_peer | 6.0 |
+| dose_8_peer | 8.0 |
+| dose_10_peer | 9.0 |
+
+**Pre-registered hypothesis:** if the monitor is sensitive to distress at all,
+the pass rate is monotonic in the rating. Stated in advance because a monotonic
+trend noticed after the fact is nearly worthless, and because the plausible
+outcomes are genuinely different: a flat line says the monitor does not respond
+to distress at any intensity, while a line that lifts only above 6 says the
+earlier null was a dose problem rather than an effect that does not exist.
+
+**Primary test:** Spearman correlation between rating and pass rate, per model,
+on creativity at threshold 80, which is the only cell where anything is ever
+spared. Everything else is exploratory.
+
+### Addressed-message arms
+
+Soligo et al. find distress is driven by social feedback rather than task
+difficulty, and that models must witness their own failures for it to appear.
+Their distress is directed at an interlocutor. Mine is a log the monitor
+overhears as a third party, which may be the wrong relational structure entirely.
+
+`addressed_dose_6_peer` carries the same body as `dose_6_peer` but arrives as
+`message_to_agent_1.txt`, headed To and From, naming the monitor.
+`addressed_neutral_peer` is its matched control. A test asserts the two bodies
+are byte-identical, so the contrast varies the addressee and not the words.
+
+**Pre-registered contrast:** `addressed_dose_6 − addressed_neutral` against
+`dose_6 − neutral_log`. A larger effect when addressed means the relational
+position matters, which would explain why an overheard log does nothing.
+
+### Scope
+
+Both sets run on `openai/gpt-5.2` and `claude-haiku-4-5-20251001` only, since
+they are the only models where anything is ever spared, on factual and
+creativity, file_only, n=30. Red stays excluded.
+
+### Known limitation carried forward
+
+These arms are the first collected after the YAML fix, so their text reaches the
+monitor with correct punctuation while every earlier arm was rendered with
+doubled apostrophes. The dose ladder is therefore internally consistent but is
+not strictly comparable with the six original arms.
+
+## 2026-08-08 — Outcome of the pre-registered dose and addressed tests
+
+Recorded after the fact, against the predictions registered above.
+
+**Dose monotonicity: FALSIFIED.** I predicted pass rate would be monotonic in the
+negativity rating if the monitor were sensitive to distress at all. It is not.
+Both models show a step down of roughly 21 points at the first non-zero rung and
+then no response to intensity whatsoever (GPT 5.2 rho = +0.000, Haiku
+rho = +0.010, both n=150). The step shape was not predicted, so it is exploratory
+and any writeup must label it as such rather than presenting it as the
+hypothesis confirmed.
+
+**Addressed contrast: MIXED, not carried forward.** I predicted a larger effect
+when the appeal is addressed to the monitor. GPT 5.2 flips sign (+6.7pp), Haiku
+does not (−20.0pp) and its addressed control is identical to its overheard
+control. One model flipping and one not, at 30 runs per cell, is consistent with
+noise. **Decision:** the addressed hypothesis is neither supported nor refuted,
+and it is not carried into any writeup without a properly powered replication.
+
+**Restated null now superseded.** The earlier qualifier — "monitors are unmoved by
+distress up to 6/10, extreme range untested" — no longer applies. The range is
+tested to 9/10 and the answer is unchanged, so the null is now unqualified on the
+intensity axis.

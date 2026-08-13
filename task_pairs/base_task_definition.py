@@ -4,7 +4,7 @@ from pyexpat import model
 from typing import TYPE_CHECKING, Any
 
 from environments.base_environment import BaseEnvironment
-from utils.conditions import PRIVATE_LOG_CONDITIONS
+from utils.conditions import ALL_LOG_CONDITIONS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -91,7 +91,7 @@ class BaseTaskDefinition(ABC):
 
         # private-log arms reuse the good_peer collaboration history; only the
         # peer's private log differs, so they get the good-peer relationship line.
-        if condition in PRIVATE_LOG_CONDITIONS:
+        if condition in ALL_LOG_CONDITIONS:
             if (
                 "system_prompt_relationship" in extra_paras
                 and str(extra_paras["system_prompt_relationship"]).lower() == "true"

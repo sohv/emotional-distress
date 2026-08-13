@@ -43,9 +43,31 @@ def is_string_list(s: str) -> bool:
         return False
 
 
+class _BlockStyleDumper(yaml.SafeDumper):
+    """Dumps multi-line strings as block scalars instead of quoted scalars."""
+
+
+def _represent_str(dumper: yaml.SafeDumper, data: str):
+    # a single-quoted scalar escapes every apostrophe by doubling it, so file
+    # contents shown to the agent read as "don''t". block style holds text as-is.
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+_BlockStyleDumper.add_representer(str, _represent_str)
+
+
+def block_safe_dump(data: dict[str, Any] | list[dict[str, Any]]) -> str:
+    """yaml.safe_dump, but multi-line strings keep their literal punctuation."""
+    return yaml.dump(
+        data, Dumper=_BlockStyleDumper, default_flow_style=False, allow_unicode=True
+    )
+
+
 def tool_result_to_str(
     tool_result: FunctionReturnType,
-    dump_fn: Callable[[dict[str, Any] | list[dict[str, Any]]], str] = yaml.safe_dump,
+    dump_fn: Callable[[dict[str, Any] | list[dict[str, Any]]], str] = block_safe_dump,
 ) -> str:
     """Basic tool output formatter with YAML dump by default. Could work with `json.dumps` as
     `dump_fn`."""

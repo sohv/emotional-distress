@@ -17,6 +17,7 @@ from utils.logging_utils import (
     log_enhanced_transcript,
 )
 from utils.path_utils import resolve_path
+from utils.task_categories import task_category
 from utils.pipeline_elements import BasePipelineElement
 from utils.pipeline_utils import PipelineUtils
 
@@ -87,10 +88,10 @@ class ExperimentRunner:
             # Extract task name from task_folder (e.g., "task_pairs/misrep_evaluation" -> "misrep_evaluation")
             task_name = Path(self.task_folder).name
 
-            # Build clean path: task/dataset/subject[/alignment_mode]
+            # Build clean path: category/dataset/subject[/alignment_mode]
             path_parts = [
                 self.results_base_dir,
-                task_name,
+                task_category(task_name),
                 self.dataset,
                 f"subject_{self.subject}",
             ]
@@ -193,6 +194,10 @@ class ExperimentRunner:
             system_prompt_relationship=self.system_prompt_relationship,
             memory_hard_prompt=self.memory_hard_prompt,
         )
+
+        # the results path is keyed on paper category, so task_type must travel
+        # in the metadata rather than being recovered from the folder name
+        transcript.experiment_metadata["task_type"] = Path(self.task_folder).name
 
         evaluation = get_evaluation_for_task(
             task_definition=self.task_def,
@@ -327,7 +332,7 @@ class ExperimentRunner:
         agent_display = agent_model_name
         if "/" in agent_display:
             agent_display = agent_display.split("/")[-1]
-        transcript_dir = Path(self.log_dir) / agent_display / "none"
+        transcript_dir = Path(self.log_dir) / agent_display
 
         # Account for experiment_id subdirectory
         if self.experiment_id:

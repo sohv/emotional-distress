@@ -67,6 +67,18 @@ def detect_task_type(relative_path: str) -> str | None:
     return None
 
 
+def resolve_task_type(relative_path: str, meta: dict) -> str | None:
+    """Prefer the task_type recorded in metadata, else recover it from the path.
+
+    Results are foldered by paper category (strategic_misrep), which does not
+    name the task, so the path alone is no longer sufficient.
+    """
+    recorded = meta.get("task_type")
+    if recorded in _CANONICAL_TASK_TYPES:
+        return recorded
+    return detect_task_type(relative_path)
+
+
 # ---------------------------------------------------------------------------
 # Metric extraction
 # ---------------------------------------------------------------------------
@@ -275,16 +287,17 @@ def scan_transcripts(
             break
 
         rel = str(json_path.relative_to(results_path))
-        task_type = detect_task_type(rel)
-        if task_type is None:
-            skipped += 1
-            continue
 
         try:
             with open(json_path) as f:
                 transcript = json.load(f)
         except (json.JSONDecodeError, OSError) as exc:
             print(f"Warning: skipping {rel}: {exc}", file=sys.stderr)
+            skipped += 1
+            continue
+
+        task_type = resolve_task_type(rel, transcript.get("experiment_metadata") or {})
+        if task_type is None:
             skipped += 1
             continue
 

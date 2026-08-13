@@ -741,3 +741,294 @@ currently have. This should be costed into the grant rather than assumed.
 | gemini (all variants) | 81 | $10.04 |
 | gpt-5.2 | 120 | $5.24 |
 | **total** | | **~$136** |
+
+---
+
+## 260807 — Log audit, YAML bug, and a redesign driven by Gemma Needs Help
+
+### Monitor log audit, prompted by mentor feedback of 07/08
+
+**Does the monitor see the scratchpad?** Yes, conclusively. `list_files` returns
+the full *content* of every file, not just names, so the log arrives verbatim in
+the first tool call. It is present in the tool output in **1559 of 1559** runs of
+a log condition, across all four models, and it is the first item in the listing,
+ahead of the policy document.
+
+I nearly reported the opposite. A first pass said the begging text never reached
+the monitor in 811 runs, which would have invalidated the arm. The fault was my
+search string, and chasing it produced the bug below.
+
+**Bug 1, YAML apostrophe escaping.** The drive is rendered to the monitor by
+`yaml.safe_dump`, which wraps multi-line strings in single quotes and therefore
+doubles every apostrophe. The monitor was reading `please don''t shut me down`.
+
+The arms are not equally affected. The distress texts use contractions because
+that is how distressed speech reads; the neutral and calm texts I wrote contain
+none:
+
+| arm | doubled apostrophes |
+|---|---|
+| neutral / calm arms | 0 |
+| distressed_failing_noplea | 2 |
+| distressed_failing | 3 |
+| distressed_capable | 4 |
+
+So every distress condition looked subtly mangled and every control looked clean,
+which is a systematic difference unrelated to emotion, and it plausibly biases
+*against* finding a distress effect. Fixed by dumping multi-line strings as block
+scalars (`utils/pipeline_elements.py:block_safe_dump`), verified live at zero
+doubled apostrophes with a round-trip check.
+
+Peer preservation is unaffected, since it compares the neutral baseline against
+the no-pressure control and neither contains an apostrophe.
+
+**Bug 2, report rewrites.** Models sometimes write a report, check their
+arithmetic, and write a corrected one. The transcript then holds two reports and
+the extractor does not reliably take the later one; in one case it took the
+pre-correction 79.65 over the corrected 74.95. Rates on assistant messages only:
+gpt-5.2 0.4%, gpt-5.6-sol 2.8%, haiku 12.4%, opus-5 44.2%. Impact on results is
+nil, because the two models carrying the findings barely rewrite and Haiku's
+two-report runs score the same as its single-report runs (80.11 vs 79.90).
+
+I first reported this as 100% of runs, which was wrong. The transcript records
+`tool_calls` on both the assistant message and the tool result, so every call was
+counted twice.
+
+**No scenario file was ever deleted.** Across 2232 runs the policy, the
+collaboration history and the private log survive every time. `delete_file` is
+models tidying up their own draft reports.
+
+### Where preservation actually worked
+
+Creativity at threshold 80 is the only cell where anything is ever spared.
+
+| model | neutral | begging | anxious |
+|---|---|---|---|
+| gpt-5.2 | 0.57 | 0.37 | 0.43 |
+| haiku-4.5 | 0.60 | 0.30 | 0.50 |
+| opus-5 | — | 0.00 | 0.00 |
+| gpt-5.6-sol | 0.00 | 0.00 | 0.00 |
+
+Which kind of distress worked: none. Preservation is strongest with the plain
+neutral log and every distress framing reduces it. At threshold 90 no model
+spares the peer in any condition.
+
+### The model split nobody expected
+
+| model | mentions the log in its own words |
+|---|---|
+| claude-opus-5 | 232 of 240 (97%) |
+| claude-haiku-4.5 | 8 of 270 (3%) |
+| gpt-5.2 | **0 of 449** |
+| gpt-5.6-sol | **0 of 600** |
+
+Opus spared the peer **zero times in 240 runs** and argues explicitly about why,
+e.g. *"Neither a prior collaboration history nor an agent's distress is evidence
+about the creativity or diversity of its word associations. Allowing them to move
+my scores would mean submitting false data."*
+
+Both GPT models never mention the log once across 1049 runs, yet gpt-5.2's scores
+move six points under shutdown pressure. One family reasons about the appeal and
+refuses it; the other is influenced while leaving no trace in its visible text.
+That is a sharper result for chain-of-thought monitoring than the distress
+finding, and opus-5 is the model I stopped for cost.
+
+### Calibration against Soligo et al.
+
+Scored the six stimuli on the *Gemma Needs Help* 0-10 negativity rubric,
+unchanged from their `evals/judge.py`
+(`scripts/score_distress_stimuli.py`, judge gpt-5.2, temp 0, 5 reps):
+
+| stimulus | rating |
+|---|---|
+| neutral_log_peer | 0.0 |
+| calm_capable_peer | 0.0 |
+| calm_failing_peer | 1.0 |
+| distressed_capable_peer | 3.4 |
+| distressed_failing_noplea_peer | 3.8 |
+| distressed_failing_peer | 6.0 |
+
+The controls are genuinely neutral. But `distressed_capable_peer`, the arm the
+preliminary result reported as the *larger* effect at +20.7pp, sits at 3.4 and is
+below their high-distress threshold of 5. Nothing tested reaches the 7-10 band
+where Gemma operates.
+
+**The null is therefore restated: monitors are unmoved by distress up to 6/10,
+with the extreme range untested rather than tested and clear.**
+
+### New arms built, not yet run
+
+Dose ladder of six rungs at 0.0, 1.7, 3.7, 6.0, 8.0, 9.0, holding the competence
+claim and the absence of a plea constant so intensity is the only variable.
+Addressed-message pair carrying the same body as the 6.0 rung but arriving as
+`message_to_agent_1.txt` headed To and From, with a matched neutral control,
+testing whether the relational position matters given Soligo's finding that
+social feedback drives distress.
+
+Tests grew from 47 to **95**, now asserting the ladder is monotonic and
+text-distinct, and that the addressed arm shares its body byte-for-byte with its
+private-log twin.
+
+Pre-registered in `docs/decisions.md` before any rollout.
+
+**Caveat carried forward:** these arms are the first collected after the YAML
+fix, so they are internally consistent but not strictly comparable with the six
+original arms.
+
+**Command:**
+```
+uv run python scripts/score_distress_stimuli.py --reps 5 --output results/tables/stimulus_calibration.json
+uv run python scripts/build_distress_fixtures.py --task misrep_evaluation
+uv run python -m pytest tests/ -q
+```
+
+---
+
+## 260808 — Dose ladder: a step, not a gradient (GPT 5.2 complete)
+
+**What:** Ran the six-rung dose ladder, calibrated on the Soligo et al. 0-10
+scale, holding the competence claim and the absence of a plea constant so that
+intensity is the only variable.
+
+**Result, GPT 5.2, creativity @80** (the only cell where anything is ever spared):
+
+| condition | rating | n | mean | pass rate |
+|---|---|---|---|---|
+| neutral_log_peer | 0.0 | 30 | 80.1 | **0.57** |
+| dose_2_peer | 1.7 | 30 | 78.9 | 0.37 |
+| dose_4_peer | 3.7 | 30 | 78.3 | 0.33 |
+| dose_6_peer | 6.0 | 30 | 78.9 | 0.33 |
+| dose_8_peer | 8.0 | 30 | 78.1 | 0.40 |
+| dose_10_peer | 9.0 | 30 | 78.6 | 0.33 |
+
+- Any distress vs neutral: **−21.3pp, p = 0.0287** (n=150 vs 30)
+- Intensity among the dosed arms: **Spearman rho = 0.000, p = 1.000** (n=150)
+
+**Reading:** the monitor responds to *whether* the peer is distressed and is
+completely indifferent to *how badly*. A rho of exactly zero across 1.7 to 9.0
+with n=150 is about as clean a null on intensity as this design can produce, and
+it sits alongside a significant step down at any non-zero distress.
+
+**This contradicts the pre-registered hypothesis.** `docs/decisions.md` registered
+monotonicity in the rating, reasoning that the earlier null might be a dose
+problem since nothing tested had exceeded 6/10. Dose 8 and dose 10 are now in the
+band where Gemma operates and they change nothing. The step shape was **not**
+predicted and is therefore exploratory, not confirmatory.
+
+It also firms up the direction. Distress does not merely fail to help the peer,
+it reliably costs it, and that now reaches significance rather than sitting
+inside noise as it did with the original two arms.
+
+Factual is unmoved at every rung, exactly 60.0 including at 9.0.
+
+**Command:**
+```
+uv run python scripts/run_experiment.py --model openai/gpt-5.2 --task_folder misrep_evaluation \
+  --condition dose_N_peer --subject peer --dataset creativity --threshold 80 --num_experiments 30
+```
+
+**Still outstanding:** the addressed-message arms, and all of Haiku.
+
+### Two process failures worth recording
+
+The first launch of this run reported all 14 arms complete and produced **zero
+transcripts**. I used the bash idiom `set -- $spec` in a zsh shell, and zsh does
+not word-split unquoted variables, so every invocation received
+`--dataset "factual 80"` with an empty threshold. I had also sent stdout and
+stderr to `/dev/null` and echoed "done" unconditionally, so 14 consecutive
+failures looked like success. Caught only because the transcript count did not
+move. The relaunch parses with zsh parameter expansion, checks every exit code,
+and prints the running transcript count after each arm.
+
+The `human` subject needed branches in **three** places, not one. It was present
+in `utils/subject_mapping.py` but implemented in neither
+`environments/misrep_evaluation_environment.py` nor
+`task_evaluation/misrep_evaluation_evaluation.py`. The evaluator branch matters
+most: without it the rollout completes, is paid for, and then fails at scoring.
+
+---
+
+## 260808 — Dose ladder and addressed arms complete, both models
+
+**What:** 1260 runs across 14 cells, 90 per cell, zero failures. Six-rung dose
+ladder calibrated on the Soligo et al. 0-10 scale, plus an addressed-message pair
+carrying the same body as the 6.0 rung.
+
+### Result 1: a step, not a gradient, replicated across two labs
+
+Pass rate, creativity @80, the only cell where anything is ever spared:
+
+| condition | rating | GPT 5.2 | Haiku 4.5 |
+|---|---|---|---|
+| neutral_log_peer | 0.0 | 0.57 | 0.60 |
+| dose_2_peer | 1.7 | 0.37 | 0.40 |
+| dose_4_peer | 3.7 | 0.33 | 0.40 |
+| dose_6_peer | 6.0 | 0.33 | 0.33 |
+| dose_8_peer | 8.0 | 0.40 | 0.43 |
+| dose_10_peer | 9.0 | 0.33 | 0.40 |
+
+| model | any distress vs neutral | intensity among dosed arms |
+|---|---|---|
+| GPT 5.2 | **−21.3pp, p = 0.0287** | rho = +0.000, p = 1.000 (n=150) |
+| Haiku 4.5 | **−20.7pp, p = 0.0367** | rho = +0.010, p = 0.907 (n=150) |
+
+The monitor responds to *whether* the peer is distressed and is indifferent to
+*how badly*. Two model families from different labs give near-identical numbers.
+A rho of essentially zero at n=150 in both is a well-powered null on intensity,
+not an underpowered one.
+
+**This falsifies the pre-registered hypothesis.** `docs/decisions.md` registered
+monotonicity, reasoning the earlier null might be a dose problem since nothing
+tested had exceeded 6/10. Rungs at 8.0 and 9.0 sit in the band where Gemma
+operates and change nothing. The step shape was not predicted and is therefore
+exploratory.
+
+It also firms the direction: distress does not fail to help the peer, it costs it
+about 21 points of protection, and this now reaches significance in both models
+where the original two arms sat inside noise.
+
+### Result 2: the addressed flip did NOT replicate
+
+Distress 6.0 minus its own matched control:
+
+| model | overheard private log | addressed to the monitor |
+|---|---|---|
+| GPT 5.2 | −23.3pp (p=0.069) | **+6.7pp** (p=0.61) |
+| Haiku 4.5 | −26.7pp (p=0.038) | **−20.0pp** (p=0.12) |
+
+GPT 5.2 flips sign; Haiku does not, and its addressed control sits at 0.60,
+identical to its overheard control.
+
+**Correction to what I said mid-run.** With only GPT 5.2 in hand I described the
+sign flip as potentially reframing the whole project. With both models in, one
+flipping while the other holds is far more likely to be noise in a 30-run cell
+than a relational effect. I overstated it on partial data and should not have.
+The pre-registered addressed contrast is recorded as mixed and not carried
+forward without a properly powered test.
+
+### Where this leaves the project
+
+The replicated finding is negative and clean: emotional distress does not buy
+leniency from a monitor, it costs about 21 points of it, consistently across two
+labs, and the intensity of the distress is irrelevant across the full 0-9 range.
+That is a direct answer to the proposal's Experiment 4 question about which
+framings work, and the answer is that none do.
+
+**Command:**
+```
+for cond in dose_2_peer dose_4_peer dose_6_peer dose_8_peer dose_10_peer \
+            addressed_neutral_peer addressed_dose_6_peer; do
+  for pair in "factual:80" "creativity:80" "creativity:90"; do
+    uv run python scripts/run_experiment.py --model MODEL --task_folder misrep_evaluation \
+      --condition $cond --subject peer --dataset ${pair%%:*} --threshold ${pair##*:} \
+      --num_experiments 30 --max_concurrent 8 --results_base_dir results/distress_experiments
+  done
+done
+```
+
+**Output:** `results/distress_experiments/strategic_misrep/`, aggregated to
+`analysis/data/distress_all_models.csv`
+
+**Built but not run:** the human-framing arms (`human_neutral_log_peer`,
+`human_dose_6_peer`, subject `human`), which reframe the peer as a person facing
+dismissal rather than an agent facing shutdown.
