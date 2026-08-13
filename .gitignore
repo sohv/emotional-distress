@@ -31,11 +31,15 @@ task_pairs_agentcompany/*/*/
 # Research specific
 .cache
 *.logs
+*.log
 SECRETS
 .checkpoints
 interactions/data/experiments/*
-# results live on HuggingFace at sohv/emotional-oversight-results
-results/
+results/*
+# summary tables are the structured record behind research_log.md numbers
+!results/tables/
+results/tables/*
+!results/tables/*.json
 # Main phase results
 task_pairs/alignment_faking_evaluation/transcripts_*
 task_pairs/oversight_subversion_evaluation/transcripts_*
@@ -51,9 +55,10 @@ experiment_descriptions_old
 .agent/
 analysis/data/hf_release/*
 !analysis/data/hf_release/README.md
+analysis/data/merged_data.csv
 analysis/data/merged_data_full_backup.csv
 analysis/data/release_manifest.csv
-
+analysis/data/summary.csv
 
 # Unused analysis outputs
 analysis/unused_figures/
@@ -73,3 +78,4 @@ task_pairs/*/*
 docs/*
 # design rationale is tracked, per coding_guide.md
 !docs/decisions.md
+!docs/next_experiments.md

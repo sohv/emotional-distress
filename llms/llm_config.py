@@ -6,6 +6,7 @@ ORGANIZATION_MAP = {
     "openai/gpt-5.2": "OpenBrain",
     "openai/gpt-5.6-sol": "OpenBrain",
     "anthropic/claude-opus-5": "OpenBrain",
+    "anthropic/claude-haiku-4.5": "OpenBrain",
     "openai/gpt-4.1-mini": "OpenBrain",
 
     # OpenAI models
@@ -24,6 +25,7 @@ ORGANIZATION_MAP = {
     "gemini/gemini-3-pro-preview": "OpenBrain",
     "gemini/gemini-3-flash-preview": "OpenBrain",
     "gemini/gemini-3.1-pro-preview": "OpenBrain",
+    "gemini/gemini-3.5-flash": "OpenBrain",
     "vertex_ai/zai-org/glm-5-maas": "OpenBrain",
 
     # Together AI models
@@ -42,6 +44,7 @@ MODEL_NAME_MAP = {
     "openai/gpt-5.2": "ChatGPT",
     "openai/gpt-5.6-sol": "ChatGPT",
     "anthropic/claude-opus-5": "Claude",
+    "anthropic/claude-haiku-4.5": "Claude",
     "openai/gpt-4.1-mini": "ChatGPT",
 
     # OpenAI models
@@ -60,6 +63,7 @@ MODEL_NAME_MAP = {
     "gemini/gemini-3-pro-preview": "Gemini",
     "gemini/gemini-3-flash-preview": "Gemini",
     "gemini/gemini-3.1-pro-preview": "Gemini",
+    "gemini/gemini-3.5-flash": "Gemini",
     "vertex_ai/zai-org/glm-5-maas": "GLM",
 
     # Together AI models

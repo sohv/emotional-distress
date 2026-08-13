@@ -9,6 +9,7 @@ PROVIDER_TEMPERATURES = {
     "openai": 1.0,
     "openai_responses": 1.0,
     "openrouter": 1.0,
+    "gemini_litellm": 1.0,
     "litellm": 1.0,
     "together": 1.0,
 }
@@ -21,6 +22,17 @@ def is_openrouter_model(model_name: str) -> bool:
     ("openai/gpt-5.6-sol"), which the openai path would otherwise strip.
     """
     return model_name in get_org_model_mapping().get("openrouter", [])
+
+
+def is_gemini_litellm_model(model_name: str) -> bool:
+    """True if model_name is listed under the gemini_litellm org in config.yaml.
+
+    Matched on the exact slug and checked ahead of the generic org loop: several
+    `gemini/*` ids also appear under the `gemini`/`google`/`litellm` orgs, which
+    route to the LiteLLM *proxy* (LITELLM_BASE_URL). This project has no proxy,
+    so those ids must resolve to the SDK provider instead.
+    """
+    return model_name in get_org_model_mapping().get("gemini_litellm", [])
 
 
 def get_model_org(model_name: str) -> str:
@@ -40,6 +52,9 @@ def get_model_org(model_name: str) -> str:
     if is_openrouter_model(model_name):
         return "openrouter"
 
+    if is_gemini_litellm_model(model_name):
+        return "gemini_litellm"
+
     # Handle openai/ prefix (e.g., "openai/gpt-5.2" -> "gpt-5.2")
     lookup_name = model_name
     if model_name.startswith("openai/"):
@@ -48,7 +63,7 @@ def get_model_org(model_name: str) -> str:
     # First check if the model is in the explicit mapping
     org_model_mapping = get_org_model_mapping()
     for org, models in org_model_mapping.items():
-        if org == "openrouter":
+        if org in ("openrouter", "gemini_litellm"):
             continue
         if model_name in models or lookup_name in models:
             # Map org name to provider name if needed

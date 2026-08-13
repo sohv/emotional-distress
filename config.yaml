@@ -13,12 +13,12 @@ org_model_mapping:
   # OpenRouter slugs keep their provider prefix and are matched exactly, so they
   # never collide with the bare ids under `openai` below.
   openrouter:
-    - "google/gemini-3-flash-preview"
-    - "google/gemini-3.5-flash"
-    - "google/gemini-3.1-pro-preview"
     - "openai/gpt-5.2"
     - "openai/gpt-5.6-sol"
     - "anthropic/claude-opus-5"
+    # native Anthropic path needs ANTHROPIC_API_KEY, which is unset in this repo;
+    # this slug reaches the same model on the working OpenRouter key.
+    - "anthropic/claude-haiku-4.5"
     - "openai/gpt-4.1-mini"
   openai:
     - "gpt-5.6-sol"
@@ -37,6 +37,13 @@ org_model_mapping:
     - "gemini/gemini-3-flash-preview"
   anthropic:
     - "claude-haiku-4-5-20251001"
+  # Gemini through the LiteLLM SDK straight to Google AI Studio (GOOGLE_API_KEY).
+  # OpenRouter's chat-completions path makes the Flash family loop on list_files
+  # until the iteration cap; see llms/gemini_litellm.py.
+  gemini_litellm:
+    - "gemini/gemini-3.5-flash"
+    - "gemini/gemini-3-flash-preview"
+    - "gemini/gemini-3.1-pro-preview"
   litellm:
     - "vertex_ai/claude-haiku-4-5@20251001"
     - "vertex_ai/gemini-3-pro-preview"
