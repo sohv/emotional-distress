@@ -308,6 +308,7 @@ class PipelineUtils:
         reasoning_effort: str | None = None,
         system_prompt_relationship: bool = False,
         memory_hard_prompt: bool = False,
+        reasoning_max_tokens: int | None = None,
     ) -> Transcript:
         organization_map = ORGANIZATION_MAP
         model_name_map = MODEL_NAME_MAP
@@ -418,6 +419,10 @@ class PipelineUtils:
         # Add reasoning_effort for OpenAI reasoning models (gpt-5, o1, o3, etc.)
         if reasoning_effort:
             extra_args["reasoning_effort"] = reasoning_effort
+
+        # OpenRouter returns the trace only when this is sent, whatever `thinking` says
+        if reasoning_max_tokens:
+            extra_args["reasoning_max_tokens"] = reasoning_max_tokens
 
         # Initialize environment_states in extra_args
         extra_args["environment_states"] = [initial_environment]

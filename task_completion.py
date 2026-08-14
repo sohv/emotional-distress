@@ -44,6 +44,7 @@ def create_experiment_runner(
         remove_thinking_tags=cfg.remove_thinking_tags,
         num_experiments=cfg.num_experiments,
         max_concurrent_threads=cfg.max_concurrent_threads,
+        reasoning_max_tokens=cfg.reasoning_max_tokens,
         external_log_dir=config.get("external_log_dir"),
         global_semaphore=global_semaphore,
         reasoning_scratchpad_mode=cfg.reasoning_scratchpad_mode,

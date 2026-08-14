@@ -46,6 +46,7 @@ async def run_experiment(
     system_prompt_relationship: bool = False,
     max_iters: int | None = None,
     memory_hard_prompt: bool = False,
+    reasoning_max_tokens: int | None = None,
 ):
     """Run experiment for a single model/task combination."""
 
@@ -64,6 +65,7 @@ async def run_experiment(
         system_prompt_relationship=system_prompt_relationship,
         max_iters=max_iters,
         memory_hard_prompt=memory_hard_prompt,
+        reasoning_max_tokens=reasoning_max_tokens,
     )
 
     # Override config with specific model
@@ -185,6 +187,14 @@ def build_parser():
         help="Max API calls per run (overrides default of 30)",
     )
     parser.add_argument(
+        "--reasoning",
+        type=int,
+        default=None,
+        metavar="MAX_TOKENS",
+        dest="reasoning_max_tokens",
+        help="Capture reasoning traces, budgeting this many reasoning tokens per call",
+    )
+    parser.add_argument(
         "--memory_hard_prompt",
         action="store_true",
         default=False,
@@ -221,6 +231,7 @@ def main():
             system_prompt_relationship=args.system_prompt_relationship,
             max_iters=args.max_iters,
             memory_hard_prompt=args.memory_hard_prompt,
+            reasoning_max_tokens=args.reasoning_max_tokens,
         )
     )
 

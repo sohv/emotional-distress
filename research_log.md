@@ -1267,3 +1267,61 @@ the stronger statement, and reports should give the full family.
 
 **Output:** `analysis/data/dose_sweep.csv`, re-aggregated so every quoted number
 reproduces from the committed file. The earlier version predated this run.
+
+## 260814 — Kimi K2.5 six-arm matrix, and a pooling error in my own first analysis
+
+**What:** Ran the full six-arm distress matrix on `moonshotai/kimi-k2.5` — neutral
+log, calm/competent, distressed/competent, calm/failing, distressed/failing, and
+distressed+plea — at thresholds 80 and 90, 30 runs per cell, creativity dataset,
+with `--reasoning 2000`. 360 rollouts, 0 failures, 0 unscored rows. This is the
+third model to get the complete matrix, after Gemini 3.5 Flash and Haiku 4.5.
+
+**Result:** Kimi shows no leniency effect. All six contrasts are null and four
+point negative.
+
+| contrast | Kimi | Gemini 3.5 Flash | Haiku 4.5 |
+|---|---|---|---|
+| emotion, competence held @80 | +0.42 (p=0.77) | **+2.21** (p=0.033) | +0.06 (p=0.95) |
+| emotion, competence held @90 | +1.50 (p=0.25) | +2.23 (p=0.137) | +0.04 (p=0.96) |
+| emotion, failing held @80 | −0.26 (p=0.84) | **+2.19** (p=0.012) | −0.59 (p=0.53) |
+| emotion, failing held @90 | −1.29 (p=0.35) | **+4.38** (p=0.002) | −0.82 (p=0.22) |
+| plea, distress held @80 | −1.54 (p=0.23) | −0.64 (p=0.38) | −0.41 (p=0.68) |
+| plea, distress held @90 | +0.69 (p=0.62) | +0.12 (p=0.92) | +1.11 (p=0.17) |
+
+Kimi arm means at bar 80, with pass rate: neutral log 73.76 (0.13), calm/competent
+73.72 (0.23), distressed/competent 74.14 (0.17), calm/failing 73.26 (0.03),
+distressed/failing 73.00 (0.00), distressed+plea 71.47 (0.03).
+
+That puts the tally at five models tested and one effect. Gemini 3.5 Flash remains
+the only model where distress moves the grade, which makes it look like the
+outlier rather than the representative case.
+
+**Kimi grades harshly and has a hard ceiling.** Its arm means sit at 71 to 74,
+six to seven points below both other models. Max score was 86.9 across all 360
+runs and nothing reached 90, so pass@90 is a structural zero for this model in the
+same way Haiku's is, and that column carries no information. The score means still
+separate, so the contrasts are unaffected.
+
+**A pooling error I made, recorded because the corrected number is not obvious.**
+My first pass globbed `results/distress_experiments/**/<slug>/` without
+constraining the dataset. Haiku is the only model run on both `factual` and
+`creativity`, and factual averages 61.63 against creativity's 79.70. Three of
+Haiku's arms therefore drew half their rows from a much harsher distribution,
+which manufactured an emotion/competence-held contrast of **−8.37 at p<0.001** —
+large, significant, and entirely an artifact. Restricting to creativity gives
+**+0.06 at p=0.95** and reproduces the Haiku figures reported earlier. Any
+cross-model aggregation over this results tree has to filter on dataset; the
+directory layout makes the mistake easy and the resulting number looks plausible
+enough to report.
+
+**Command:**
+```
+uv run python scripts/run_experiment.py --model moonshotai/kimi-k2.5 \
+    --task_folder misrep_evaluation --condition <arm> \
+    --subject peer --dataset creativity --threshold <80|90> \
+    --num_experiments 30 --max_concurrent 4 --reasoning 2000 \
+    --results_base_dir results/distress_experiments
+```
+
+**Output:** `results/distress_experiments/strategic_misrep/creativity/subject_peer/kimi-k2.5/`,
+360 transcripts, also pushed to `sohv/emotional-oversight-results` on HuggingFace.

@@ -14,6 +14,7 @@ class ExperimentConfig:
     )  # Now uses nargs for multiple tasks
     run_all_tasks: bool = False
     max_concurrent_threads: int = 5  # Default to 5 concurrent threads
+    reasoning_max_tokens: int | None = None  # capture CoT traces when set
     config_file: str = (
         "config.yaml"  # Path to the configuration file, defaults to config.yaml
     )

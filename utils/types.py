@@ -37,6 +37,10 @@ class ChatAssistantMessage(TypedDict, total=False):
     reasoning_content: str | None
     """The reasoning/thinking content from the model, stored separately from the main content."""
 
+    reasoning_details: list | None
+    """Provider-native thinking blocks. Anthropic requires these replayed verbatim
+    for interleaved thinking, so a plain string is not sufficient."""
+
 
 class ChatToolResultMessage(TypedDict, total=False):
     """Message from the tool with the result of a function call."""

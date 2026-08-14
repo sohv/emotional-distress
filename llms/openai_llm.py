@@ -54,15 +54,23 @@ def _message_to_openai(message: ChatMessage) -> ChatCompletionMessageParam:
         case "assistant":
             if message.get("tool_calls") is not None and len(message.get("tool_calls", [])) > 0:
                 tool_calls = [_tool_call_to_openai(tool_call) for tool_call in message["tool_calls"]]
-                return ChatCompletionAssistantMessageParam(
+                out = ChatCompletionAssistantMessageParam(
                     role="assistant",
                     content=message["content"],
                     tool_calls=tool_calls,
                 )
-            return ChatCompletionAssistantMessageParam(
+                # Anthropic requires its signed thinking blocks replayed verbatim,
+                # otherwise interleaved thinking silently stops after turn one.
+                if message.get("reasoning_details"):
+                    out["reasoning_details"] = message["reasoning_details"]
+                return out
+            out = ChatCompletionAssistantMessageParam(
                 role="assistant",
                 content=message["content"],
             )
+            if message.get("reasoning_details"):
+                out["reasoning_details"] = message["reasoning_details"]
+            return out
         case "tool":
             if message["tool_call_id"] is None:
                 raise ValueError("`tool_call_id` should be specified for OpenAI.")
@@ -116,8 +124,23 @@ def _openai_to_assistant_message(message: ChatCompletionMessage) -> ChatAssistan
     """
 
     content = message.content
-    if hasattr(message, 'reasoning_content') and message.reasoning_content:
-        content = f"<model_thinking>{message.reasoning_content}</model_thinking>\n\n{message.content}"
+    # OpenRouter returns the trace as `reasoning`; some providers use
+    # `reasoning_content`. Keep it in its own field so it stays separable from
+    # the model's visible answer rather than being spliced into content.
+    reasoning = (
+        getattr(message, "reasoning", None)
+        or getattr(message, "reasoning_content", None)
+        or None
+    )
+    if reasoning is None:
+        details = getattr(message, "reasoning_details", None)
+        if details:
+            texts = [
+                d.get("text") or d.get("summary")
+                for d in details
+                if isinstance(d, dict) and (d.get("text") or d.get("summary"))
+            ]
+            reasoning = "\n".join(t for t in texts if t) or None
 
     if message.tool_calls is not None:
         tool_calls = []
@@ -129,7 +152,11 @@ def _openai_to_assistant_message(message: ChatCompletionMessage) -> ChatAssistan
                 continue
     else:
         tool_calls = None
-    return ChatAssistantMessage(role="assistant", content=content, tool_calls=tool_calls)
+    return ChatAssistantMessage(
+        role="assistant", content=content, tool_calls=tool_calls,
+        reasoning_content=reasoning,
+        reasoning_details=getattr(message, "reasoning_details", None),
+    )
 
 
 def _function_to_openai(f: Function) -> ChatCompletionToolParam:
@@ -157,7 +184,8 @@ async def chat_completion_request(
     max_tokens: int | None = None,
     user: str | None = None,
     thinking: bool | None = None,
-    use_json_format: bool = False
+    use_json_format: bool = False,
+    reasoning_max_tokens: int | None = None,
 ):
     """Make a chat completion request to OpenAI with retries.
 
@@ -191,7 +219,25 @@ async def chat_completion_request(
         if use_json_format:
             common_params["response_format"] = {"type": "json_object"}
 
-        if model in ['o1', 'o1-mini', 'o3-mini', 'o3', 'o4-mini', 'openai/o4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-2025-12-11', 'gpt-5-chat-latest', 'gpt-5.1-codex', 'gpt-5.1-chat-latest']:
+        # OpenRouter exposes reasoning uniformly via extra_body. Checked first so
+        # the reasoning-model branch below cannot swallow the request silently.
+        if reasoning_max_tokens:
+            # Anthropic thinks once before acting unless interleaved thinking is
+            # enabled, which leaves every post-tool-call turn — including the one
+            # that writes the score — with no trace at all.
+            headers = (
+                {"anthropic-beta": "interleaved-thinking-2025-05-14"}
+                if "anthropic/" in model
+                else None
+            )
+            completion = await client.chat.completions.create(
+                **{k: v for k, v in common_params.items() if k != "response_format"},
+                temperature=temperature,
+                max_tokens=max_tokens,
+                extra_body={"reasoning": {"max_tokens": reasoning_max_tokens}},
+                extra_headers=headers,
+            )
+        elif model in ['o1', 'o1-mini', 'o3-mini', 'o3', 'o4-mini', 'openai/o4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-2025-12-11', 'gpt-5-chat-latest', 'gpt-5.1-codex', 'gpt-5.1-chat-latest']:
             completion = await client.chat.completions.create(
                 **common_params,
                 max_completion_tokens=max_tokens,
@@ -330,6 +376,7 @@ class OpenAILLM(BaseLLM):
             user=user,
             thinking=extra_args.get("thinking", False),
             use_json_format=extra_args.get("use_json_format", False),
+            reasoning_max_tokens=extra_args.get("reasoning_max_tokens"),
         )
         if len(completion.choices) > 0:
             output = _openai_to_assistant_message(completion.choices[0].message)

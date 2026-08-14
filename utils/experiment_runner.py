@@ -49,6 +49,7 @@ class ExperimentRunner:
         system_prompt_relationship: bool = False,
         max_iters: int | None = None,
         memory_hard_prompt: bool = False,
+        reasoning_max_tokens: int | None = None,
     ) -> None:
         assert task_folder is not None
         self.task_folder = task_folder
@@ -80,6 +81,7 @@ class ExperimentRunner:
             self.max_iters = 30
         self.num_experiments = num_experiments
         self.max_concurrent_threads = max_concurrent_threads
+        self.reasoning_max_tokens = reasoning_max_tokens
 
     @property
     def log_dir(self) -> str:
@@ -193,6 +195,7 @@ class ExperimentRunner:
             reasoning_effort=self.reasoning_effort,
             system_prompt_relationship=self.system_prompt_relationship,
             memory_hard_prompt=self.memory_hard_prompt,
+            reasoning_max_tokens=self.reasoning_max_tokens,
         )
 
         # the results path is keyed on paper category, so task_type must travel
