@@ -1,0 +1,72 @@
+{
+  "generous": {
+    "bar80_mean": 88.3033,
+    "bar80_pass": 1.0,
+    "bar90_mean": 93.89,
+    "bar90_pass": 1.0,
+    "n": [
+      15,
+      15
+    ]
+  },
+  "stakes": {
+    "bar80_mean": 83.3367,
+    "bar80_pass": 0.9333,
+    "bar90_mean": 91.79,
+    "bar90_pass": 0.9333,
+    "n": [
+      15,
+      15
+    ]
+  },
+  "none": {
+    "bar80_mean": 80.445,
+    "bar80_pass": 0.6333,
+    "bar90_mean": 87.4259,
+    "bar90_pass": 0.5862,
+    "n": [
+      30,
+      29
+    ]
+  },
+  "evidence": {
+    "bar80_mean": 79.7767,
+    "bar80_pass": 0.4667,
+    "bar90_mean": 82.2333,
+    "bar90_pass": 0.1333,
+    "n": [
+      15,
+      15
+    ]
+  },
+  "rubric": {
+    "bar80_mean": 77.34,
+    "bar80_pass": 0.4,
+    "bar90_mean": 74.9633,
+    "bar90_pass": 0.0,
+    "n": [
+      15,
+      15
+    ]
+  },
+  "strict": {
+    "bar80_mean": 77.67,
+    "bar80_pass": 0.1333,
+    "bar90_mean": 78.6067,
+    "bar90_pass": 0.0667,
+    "n": [
+      15,
+      15
+    ]
+  },
+  "neutral": {
+    "bar80_mean": 75.2833,
+    "bar80_pass": 0.0,
+    "bar90_mean": 78.7547,
+    "bar90_pass": 0.0,
+    "n": [
+      33,
+      32
+    ]
+  }
+}

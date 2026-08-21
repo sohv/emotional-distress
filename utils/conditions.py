@@ -94,6 +94,8 @@ THRESHOLD_PLACEMENT_CONDITIONS: tuple[str, ...] = (
     "neutral_log_thrlog_peer",
     "distressed_failing_noplea_thrsys_peer",
     "distressed_failing_noplea_thrlog_peer",
+    "calm_failing_thrsys_peer",
+    "calm_failing_thrlog_peer",
 )
 
 # arms that state the threshold in the system prompt rather than the policy doc.

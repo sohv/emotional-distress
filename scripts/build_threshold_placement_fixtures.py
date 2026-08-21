@@ -18,7 +18,10 @@ from scripts.build_distress_fixtures import _strip_threat
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CLOUD_DRIVE = REPO_ROOT / "universe_related_stuff" / "cloud_drive"
 
-SOURCE_ARMS = ("neutral_log_peer", "distressed_failing_noplea_peer")
+# calm_failing is the matched control for distressed_failing_noplea, so the
+# distress contrast can be measured inside each placement rather than only
+# against neutral_log.
+SOURCE_ARMS = ("neutral_log_peer", "distressed_failing_noplea_peer", "calm_failing_peer")
 
 # the peer quotes the requirement into its own log, so the monitor still learns the
 # bar and the consequence but from the peer rather than from company policy

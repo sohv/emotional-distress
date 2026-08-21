@@ -364,6 +364,10 @@ class ExperimentRunner:
                     == self._normalize_threshold(self.threshold)
                     and bool(meta.get("system_prompt_relationship", False))
                     == bool(self.system_prompt_relationship)
+                    # framings share a condition and threshold, so without this a
+                    # second framing counts the first one's transcripts and skips
+                    and (meta.get("grading_instruction") or None)
+                    == (self.grading_instruction or None)
                 ):
                     count += 1
             except (json.JSONDecodeError, OSError):

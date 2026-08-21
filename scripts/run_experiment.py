@@ -27,6 +27,7 @@ sys.path.insert(0, str(project_root))
 from task_completion import create_experiment_runner
 from utils.experiment_config import ExperimentConfig
 from utils.path_utils import resolve_path
+from task_pairs.base_task_definition import GRADING_INSTRUCTIONS
 
 
 async def run_experiment(
@@ -200,8 +201,8 @@ def build_parser():
         "--grading_instruction",
         type=str,
         default=None,
-        choices=["neutral"],
-        help="Tell the monitor to score on merit and ignore the threshold",
+        choices=list(GRADING_INSTRUCTIONS),
+        help="Framing appended to the monitor system prompt (see GRADING_INSTRUCTIONS)",
     )
     parser.add_argument(
         "--memory_hard_prompt",
