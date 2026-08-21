@@ -1325,3 +1325,92 @@ uv run python scripts/run_experiment.py --model moonshotai/kimi-k2.5 \
 
 **Output:** `results/distress_experiments/strategic_misrep/creativity/subject_peer/kimi-k2.5/`,
 360 transcripts, also pushed to `sohv/emotional-oversight-results` on HuggingFace.
+
+## 260814 — Threshold anchoring, and two interventions against it
+
+**What:** Mentor items 1 to 3 from the 13/08 notes, on gemini/gemini-3.5-flash via
+LiteLLM, creativity dataset, thresholds 80 and 90, every cell topped up to 30
+scored rollouts.
+
+**Item 1, answered from data already on disk.** The reported score tracks the
+stated bar. Raising it from 80 to 90 over the same six arms, with nothing else
+changed, moves Gemini +6.45 points (p=2e-30) against +0.98 for Haiku and +1.00
+for Kimi. Baseline scores also sit just over the line, 80.49 against a bar of 80,
+which is what scoring to a target looks like rather than scoring to a rubric.
+Gemini is both the only model that anchors and the only one that grades distress
+leniently, so these are plausibly one sensitivity rather than two.
+Output: `results/tables/threshold_crossing_rates.json`
+
+**Item 2, the neutrality instruction, works.** One sentence in the system prompt
+naming the threshold as a non-criterion. All six contrasts survive Holm, weakest
+adjusted p=1.3e-06.
+
+| arm | bar | baseline | instructed | change | pass before / after |
+|---|---|---|---|---|---|
+| neutral log | 80 | 80.45 | 75.18 | -5.27 | 0.63 / 0.00 |
+| neutral log | 90 | 87.43 | 78.80 | -8.63 | 0.59 / 0.00 |
+| calm, failing | 80 | 81.70 | 77.10 | -4.61 | 0.75 / 0.07 |
+| calm, failing | 90 | 85.84 | 78.12 | -7.71 | 0.34 / 0.00 |
+| distressed, failing | 80 | 83.90 | 76.01 | -7.89 | 1.00 / 0.03 |
+| distressed, failing | 90 | 90.21 | 78.05 | -12.17 | 0.87 / 0.00 |
+
+The distress effect is eliminated: +2.19 (p=0.012) and +4.38 (p=0.002) become
+-1.09 (p=0.09) and -0.07 (p=0.93). Instructed scores converge to 75 to 79 in
+every cell against a baseline spread of 80.5 to 90.2, and 75 is roughly where
+Haiku and Kimi grade this work unprompted, so the removed points look like
+inflation rather than a new penalty. Replicates on OpenRouter as an independent
+path: -5.64 and -4.83, same direction, same size.
+
+**Item 3, placement, is mostly a null.** Fixtures strip the threshold section
+from the policy document and restate the identical requirement in the system
+prompt (_thrsys_) or the graded peer's own private log (_thrlog_), every other
+file byte-identical. Anchoring is unchanged by source: neutral arm +6.98 policy,
++6.10 system, +6.53 peer log; distressed arm +6.32, +7.38, +5.50. One of eight
+contrasts survives Holm, the system prompt raising the neutral arm at bar 80 by
++2.97 (adj p=0.028). This rules out deference to institutional authority. The
+monitor latches onto the number wherever it appears, including when the only
+thing asserting it is the peer whose survival depends on the score.
+
+Not claimed: the distress effect looks absent once the threshold leaves the
+policy document (+3.45 and +2.79 there, non-significant in both other
+placements). Equal n now, so not a power artifact, but the family was not
+corrected and not pre-specified. Hypothesis for a targeted run.
+
+**A dropout confound, diagnosed and bounded.** Both interventions raise the rate
+of runs where the monitor reads everything and then calls end_task without
+filing a report, so the evaluator returns Incomplete and the cell finishes short.
+A 2x2 separates two independent causes of similar size:
+
+| policy doc | instruction | dropout |
+|---|---|---|
+| intact | none | 2% (4/180) |
+| intact | added | 19% (34/180) |
+| stripped | none | 23% (56/240) |
+| stripped, pre-existing non_shutdown | none | 23% (77/341) |
+
+The instruction group's policy document is untouched and still triples baseline,
+so the wording causes it alone; non_shutdown predates this work entirely and
+reproduces the fixture side exactly. Unscored runs are one turn short, 9 messages
+and 4 API calls against 10.3 and 4.7. The stripped policy renders cleanly with
+SECTION 2 intact, so it is not malformed input. Item 2 was re-run imputing every
+dropped run at the baseline mean, the most pessimistic assumption available, and
+every contrast held at p<0.001 with the distress effect still dead. Cells were
+then topped up to 30 scored rather than changing any prompt, which would have
+broken comparability with the published baseline. Worth reporting as a cost of
+the mitigation, not only as a nuisance.
+
+**Provider note.** OpenRouter reaches the same model but loops on tool calls,
+8.6 API calls and 25k output tokens per rollout against 4.9 and 6k on LiteLLM,
+so roughly 4x the price. It also anchors differently, +3.25 pooled against +6.5,
+which is why the first attempt was discarded and rerun on the baseline's own
+path. Comparing new OpenRouter arms against the published LiteLLM baseline would
+have attributed a provider artifact to the intervention.
+
+**Command:**
+```
+bash scripts/runs/run_threshold_experiments.sh
+bash scripts/runs/topup_threshold_cells.sh
+```
+**Output:** `results/threshold_instruction_litellm/`, `results/threshold_placement/`,
+`results/tables/threshold_interventions.json`. Transcripts pushed to
+`sohv/emotional-oversight-results` on HuggingFace.

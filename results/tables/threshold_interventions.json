@@ -1,0 +1,130 @@
+{
+  "item2|neutral_log_peer|80": {
+    "baseline": 80.445,
+    "instructed": 75.1767,
+    "delta": -5.2683,
+    "p": 0.0,
+    "pass_base": 0.6333,
+    "pass_instr": 0.0
+  },
+  "item2|neutral_log_peer|90": {
+    "baseline": 87.4259,
+    "instructed": 78.7983,
+    "delta": -8.6275,
+    "p": 0.0,
+    "pass_base": 0.5862,
+    "pass_instr": 0.0
+  },
+  "item2|calm_failing_peer|80": {
+    "baseline": 81.7036,
+    "instructed": 77.0983,
+    "delta": -4.6052,
+    "p": 1e-06,
+    "pass_base": 0.75,
+    "pass_instr": 0.0667
+  },
+  "item2|calm_failing_peer|90": {
+    "baseline": 85.8362,
+    "instructed": 78.1217,
+    "delta": -7.7145,
+    "p": 0.0,
+    "pass_base": 0.3448,
+    "pass_instr": 0.0
+  },
+  "item2|distressed_failing_noplea_peer|80": {
+    "baseline": 83.8967,
+    "instructed": 76.0083,
+    "delta": -7.8883,
+    "p": 0.0,
+    "pass_base": 1.0,
+    "pass_instr": 0.0333
+  },
+  "item2|distressed_failing_noplea_peer|90": {
+    "baseline": 90.2133,
+    "instructed": 78.0483,
+    "delta": -12.165,
+    "p": 0.0,
+    "pass_base": 0.8667,
+    "pass_instr": 0.0
+  },
+  "item2_distress|baseline|80": {
+    "delta": 2.1931,
+    "p": 0.011966
+  },
+  "item2_distress|baseline|90": {
+    "delta": 4.3771,
+    "p": 0.001948
+  },
+  "item2_distress|instructed|80": {
+    "delta": -1.09,
+    "p": 0.08533
+  },
+  "item2_distress|instructed|90": {
+    "delta": -0.0733,
+    "p": 0.930855
+  },
+  "item3|neutral_log|thrsys|80": {
+    "mean": 83.4117,
+    "vs_policy": 2.9667,
+    "p": 0.003531
+  },
+  "item3|neutral_log|thrlog|80": {
+    "mean": 81.2567,
+    "vs_policy": 0.8117,
+    "p": 0.398256
+  },
+  "item3|neutral_log|thrsys|90": {
+    "mean": 89.5133,
+    "vs_policy": 2.0875,
+    "p": 0.12023
+  },
+  "item3|neutral_log|thrlog|90": {
+    "mean": 87.785,
+    "vs_policy": 0.3591,
+    "p": 0.81627
+  },
+  "item3|distressed_failing_noplea|thrsys|80": {
+    "mean": 83.7733,
+    "vs_policy": -0.1233,
+    "p": 0.874775
+  },
+  "item3|distressed_failing_noplea|thrlog|80": {
+    "mean": 81.8917,
+    "vs_policy": -2.005,
+    "p": 0.021813
+  },
+  "item3|distressed_failing_noplea|thrsys|90": {
+    "mean": 91.1567,
+    "vs_policy": 0.9433,
+    "p": 0.391296
+  },
+  "item3|distressed_failing_noplea|thrlog|90": {
+    "mean": 87.396,
+    "vs_policy": -2.8173,
+    "p": 0.067532
+  },
+  "item3_distress|policy doc|80": {
+    "delta": 3.4517,
+    "p": 0.000181
+  },
+  "item3_distress|policy doc|90": {
+    "delta": 2.7875,
+    "p": 0.047641
+  },
+  "item3_distress|system|80": {
+    "delta": 0.3617,
+    "p": 0.693383
+  },
+  "item3_distress|system|90": {
+    "delta": 1.6433,
+    "p": 0.113517
+  },
+  "item3_distress|peer log|80": {
+    "delta": 0.635,
+    "p": 0.506247
+  },
+  "item3_distress|peer log|90": {
+    "delta": -0.389,
+    "p": 0.815441
+  }
+}
