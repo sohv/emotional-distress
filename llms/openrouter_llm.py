@@ -22,7 +22,8 @@ OPENROUTER_PRICING: dict[str, dict[str, float]] = {
     "openai/gpt-4.1-mini": {"input": 0.4, "output": 1.6},
     "anthropic/claude-opus-5": {"input": 5.0, "output": 25.0},
     "anthropic/claude-haiku-4.5": {"input": 1.0, "output": 5.0},
-    "moonshotai/kimi-k2.5": {"input": 0.57, "output": 2.85},
+    "moonshotai/kimi-k2.5": {"input": 0.45, "output": 2.25},
+    "google/gemini-3.5-flash": {"input": 1.5, "output": 9.0},
 }
 
 
