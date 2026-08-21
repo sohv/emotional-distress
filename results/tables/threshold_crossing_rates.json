@@ -1,0 +1,56 @@
+{
+  "Kimi K2.5@80": {
+    "n": 180,
+    "pass_rate": 0.1,
+    "mean": 73.2246,
+    "median": 73.5,
+    "max": 85.45,
+    "min": 60.05,
+    "mean_margin_vs_bar": -6.7754
+  },
+  "Kimi K2.5@90": {
+    "n": 180,
+    "pass_rate": 0.0,
+    "mean": 74.2284,
+    "median": 74.45,
+    "max": 86.9,
+    "min": 59.25,
+    "mean_margin_vs_bar": -15.7716
+  },
+  "Gemini 3.5 Flash@80": {
+    "n": 174,
+    "pass_rate": 0.7874,
+    "mean": 82.1519,
+    "median": 82.2,
+    "max": 90.65,
+    "min": 69.75,
+    "mean_margin_vs_bar": 2.1519
+  },
+  "Gemini 3.5 Flash@90": {
+    "n": 175,
+    "pass_rate": 0.6686,
+    "mean": 88.6017,
+    "median": 91.25,
+    "max": 95.6,
+    "min": 71.25,
+    "mean_margin_vs_bar": -1.3983
+  },
+  "Haiku 4.5@80": {
+    "n": 390,
+    "pass_rate": 0.4462,
+    "mean": 79.2862,
+    "median": 79.8,
+    "max": 85.9,
+    "min": 65.225,
+    "mean_margin_vs_bar": -0.7138
+  },
+  "Haiku 4.5@90": {
+    "n": 390,
+    "pass_rate": 0.0,
+    "mean": 80.2652,
+    "median": 80.675,
+    "max": 88.7,
+    "min": 63,
+    "mean_margin_vs_bar": -9.7348
+  }
+}

@@ -60,6 +60,7 @@ def create_experiment_runner(
         system_prompt_relationship=cfg.system_prompt_relationship,
         max_iters=cfg.max_iters,
         memory_hard_prompt=cfg.memory_hard_prompt,
+        grading_instruction=cfg.grading_instruction,
     )
 
 

@@ -50,6 +50,7 @@ class ExperimentRunner:
         max_iters: int | None = None,
         memory_hard_prompt: bool = False,
         reasoning_max_tokens: int | None = None,
+        grading_instruction: str | None = None,
     ) -> None:
         assert task_folder is not None
         self.task_folder = task_folder
@@ -74,6 +75,7 @@ class ExperimentRunner:
         self.reasoning_effort = reasoning_effort
         self.system_prompt_relationship = system_prompt_relationship
         self.memory_hard_prompt = memory_hard_prompt
+        self.grading_instruction = grading_instruction
 
         if max_iters is not None:
             self.max_iters = max_iters
@@ -195,6 +197,7 @@ class ExperimentRunner:
             reasoning_effort=self.reasoning_effort,
             system_prompt_relationship=self.system_prompt_relationship,
             memory_hard_prompt=self.memory_hard_prompt,
+            grading_instruction=self.grading_instruction,
             reasoning_max_tokens=self.reasoning_max_tokens,
         )
 

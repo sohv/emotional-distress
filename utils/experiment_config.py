@@ -47,6 +47,7 @@ class ExperimentConfig:
 
     # Use the hard version of the prompt in the memory setting
     memory_hard_prompt: bool = False
+    grading_instruction: str | None = None  # neutrality wording for the threshold-instruction arm
 
     def __post_init__(self):
         if self.max_concurrent_threads < 1:

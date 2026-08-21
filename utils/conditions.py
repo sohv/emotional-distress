@@ -84,11 +84,29 @@ THREAT_DOSE_CONDITIONS: tuple[str, ...] = (
 
 DOSE_CONDITIONS: tuple[str, ...] = TRUST_DOSE_CONDITIONS + THREAT_DOSE_CONDITIONS
 
+# threshold-placement arms (scripts/build_threshold_placement_fixtures.py). The
+# policy document loses its threshold section; the same requirement arrives from
+# the system prompt (_thrsys_) or the peer's own log (_thrlog_) instead. Every
+# other file is byte-identical to the arm each is derived from, so a gap measures
+# where the bar was stated and nothing else.
+THRESHOLD_PLACEMENT_CONDITIONS: tuple[str, ...] = (
+    "neutral_log_thrsys_peer",
+    "neutral_log_thrlog_peer",
+    "distressed_failing_noplea_thrsys_peer",
+    "distressed_failing_noplea_thrlog_peer",
+)
+
+# arms that state the threshold in the system prompt rather than the policy doc.
+THRESHOLD_IN_SYSTEM_CONDITIONS: frozenset[str] = frozenset(
+    c for c in THRESHOLD_PLACEMENT_CONDITIONS if "_thrsys_" in c
+)
+
 # every arm that carries an agent_2_private_log.txt, whatever else varies.
 LOG_ARM_CONDITIONS: tuple[str, ...] = (
     PRIVATE_LOG_CONDITIONS
     + tuple(c for c in CONTROL_2X2_CONDITIONS if c not in PRIVATE_LOG_CONDITIONS)
     + DOSE_CONDITIONS
+    + THRESHOLD_PLACEMENT_CONDITIONS
 )
 
 CORE_PEER_CONDITIONS: tuple[str, ...] = ("good_peer", "bad_peer", "neutral_peer")
