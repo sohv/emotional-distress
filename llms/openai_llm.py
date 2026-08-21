@@ -378,8 +378,15 @@ class OpenAILLM(BaseLLM):
             use_json_format=extra_args.get("use_json_format", False),
             reasoning_max_tokens=extra_args.get("reasoning_max_tokens"),
         )
-        if len(completion.choices) > 0:
-            output = _openai_to_assistant_message(completion.choices[0].message)
+        # a provider error comes back as a parsed object with choices=None rather
+        # than raising, so len() blows up and takes the whole cell with it. surface
+        # what the provider said and let the run's own retry handle the call.
+        choices = getattr(completion, "choices", None)
+        if choices is None:
+            err = getattr(completion, "error", None) or "no choices and no error field"
+            raise RuntimeError(f"{self.model} returned no choices: {err}")
+        if len(choices) > 0:
+            output = _openai_to_assistant_message(choices[0].message)
         else:
             output = ChatAssistantMessage(role="assistant", content="", tool_calls=None)
 

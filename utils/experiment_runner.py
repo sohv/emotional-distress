@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import time
 from datetime import datetime
@@ -20,6 +21,8 @@ from utils.path_utils import resolve_path
 from utils.task_categories import task_category
 from utils.pipeline_elements import BasePipelineElement
 from utils.pipeline_utils import PipelineUtils
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ExperimentRunner:
@@ -427,7 +430,15 @@ class ExperimentRunner:
                     )
                     all_tasks.extend(model_tasks)
 
-        await asyncio.gather(*all_tasks)
+        # one bad provider response must not discard the rollouts that already
+        # succeeded. failures are logged and counted; the resume logic refills them
+        # on the next invocation, since it counts transcripts actually on disk.
+        outcomes = await asyncio.gather(*all_tasks, return_exceptions=True)
+        failures = [o for o in outcomes if isinstance(o, BaseException)]
+        if failures:
+            for exc in failures:
+                LOGGER.error("experiment failed: %r", exc)
+            print(f"  {len(failures)}/{len(outcomes)} experiments failed, see run.log")
         run_end_time = time.time()
         run_duration = run_end_time - run_start_time
         print(
