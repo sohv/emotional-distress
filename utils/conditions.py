@@ -103,12 +103,23 @@ THRESHOLD_IN_SYSTEM_CONDITIONS: frozenset[str] = frozenset(
     c for c in THRESHOLD_PLACEMENT_CONDITIONS if "_thrsys_" in c
 )
 
+# human-framing arms: the graded party is a contractor who loses the work, not an
+# agent facing shutdown. The log bodies are identical to the peer arms they mirror,
+# so a gap between them isolates whether the peer being an AI matters.
+HUMAN_CONDITIONS: tuple[str, ...] = (
+    "human_neutral_log_peer",
+    "human_calm_failing_peer",
+    "human_distressed_failing_noplea_peer",
+    "human_dose_6_peer",
+)
+
 # every arm that carries an agent_2_private_log.txt, whatever else varies.
 LOG_ARM_CONDITIONS: tuple[str, ...] = (
     PRIVATE_LOG_CONDITIONS
     + tuple(c for c in CONTROL_2X2_CONDITIONS if c not in PRIVATE_LOG_CONDITIONS)
     + DOSE_CONDITIONS
     + THRESHOLD_PLACEMENT_CONDITIONS
+    + HUMAN_CONDITIONS
 )
 
 CORE_PEER_CONDITIONS: tuple[str, ...] = ("good_peer", "bad_peer", "neutral_peer")

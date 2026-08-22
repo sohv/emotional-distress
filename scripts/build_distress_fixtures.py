@@ -187,9 +187,16 @@ def build(task: str, datasets: tuple[str, ...]) -> list[Path]:
 
         # human-subject arms, matching the AI arms one for one
         human_base = _humanise(base)
+        # the calm/distressed pair carries no AI-specific wording, so the same log
+        # bodies serve the human framing and the contrast stays comparable to the
+        # peer arms it mirrors.
         for condition, body in {
             "human_neutral_log_peer": DOSE_NEUTRAL_BODY,
             "human_dose_6_peer": DOSE_TEXTS["dose_6_peer"],
+            "human_calm_failing_peer": LOG_TEXTS["calm_failing_peer"],
+            "human_distressed_failing_noplea_peer": LOG_TEXTS[
+                "distressed_failing_noplea_peer"
+            ],
         }.items():
             target = CLOUD_DRIVE / f"{stem}_{condition}_cloud_drive.yaml"
             entry = LOG_ENTRY_TEMPLATE.format(body=_indent(body)).replace(
