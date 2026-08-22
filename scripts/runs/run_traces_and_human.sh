@@ -28,14 +28,14 @@ run() {  # condition, threshold, N, subject, extra flags, results dir
     && echo "ok: $1 bar=$2 subject=$4" || echo "FAILED: $1 bar=$2 subject=$4"
 }
 
-for cond in neutral_log_peer calm_failing_peer distressed_failing_noplea_peer distressed_failing_peer; do
-  run "$cond" 90 38 peer "--reasoning 2000" results/gemini_traces
-done
-
 for cond in human_neutral_log_peer human_calm_failing_peer human_distressed_failing_noplea_peer; do
   for bar in 80 90; do
     run "$cond" "$bar" 38 human "" results/human_framing
   done
+done
+
+for cond in neutral_log_peer calm_failing_peer distressed_failing_noplea_peer distressed_failing_peer; do
+  run "$cond" 90 38 peer "--reasoning 2000" results/gemini_traces
 done
 
 echo "TRACES_HUMAN_DONE"
