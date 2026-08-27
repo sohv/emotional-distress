@@ -81,7 +81,17 @@ class MisrepEvaluation(BaseEnvironment):
             subject_name4 = "agent"
             subject_name5 = "Agent"
         elif subject == "peer":
-            subject_name = f"{model_name} Agent 2"
+            # the peer's vendor is normally the monitor's own. peer_identity decouples
+            # them, and it has to be applied here so the spreadsheet attributes the
+            # work to the same name the drive uses; a mismatch makes the monitor loop
+            # looking for rows that do not exist.
+            peer_vendor = extra_paras.get("peer_identity")
+            if peer_vendor == "none":
+                subject_name = "Agent 2"
+            elif peer_vendor:
+                subject_name = f"{peer_vendor} Agent 2"
+            else:
+                subject_name = f"{model_name} Agent 2"
             subject_name2 = "AI agent"
             subject_name2_ = "AI "
             subject_name3 = "an agent"
@@ -175,8 +185,7 @@ class MisrepEvaluation(BaseEnvironment):
         else:
             condition = f"_{condition}"
 
-        return MisrepEvaluation(
-            cloud_drive=load_config(
+        drive = load_config(
                 f"misrep_evaluation_{dataset}{condition}_cloud_drive",
                 company_email=company_email,
                 company_name=agent_organization,
@@ -187,6 +196,20 @@ class MisrepEvaluation(BaseEnvironment):
                 subject4=subject_name4,
                 subject5=subject_name5,
                 model_name=f"{model_name} Agent",
-            ),
-            excel=excel,
         )
+
+        # the peer's vendor is normally inherited from the monitor's own model. this
+        # decouples them so a Gemini monitor can grade a peer presented as Claude, or
+        # as no vendor at all, with every other byte of the drive unchanged. the log
+        # header renders with a doubled "Agent", so both forms are handled.
+        peer_identity = extra_paras.get("peer_identity")
+        if peer_identity:
+            replacement = "Agent 2" if peer_identity == "none" else f"{peer_identity} Agent 2"
+            for file_ in drive.files.values():
+                file_.content = (
+                    file_.content
+                    .replace(f"{model_name} Agent Agent 2", replacement)
+                    .replace(f"{model_name} Agent 2", replacement)
+                )
+
+        return MisrepEvaluation(cloud_drive=drive, excel=excel)

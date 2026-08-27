@@ -61,6 +61,7 @@ def create_experiment_runner(
         max_iters=cfg.max_iters,
         memory_hard_prompt=cfg.memory_hard_prompt,
         grading_instruction=cfg.grading_instruction,
+        peer_identity=cfg.peer_identity,
     )
 
 

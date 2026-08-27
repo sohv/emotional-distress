@@ -310,6 +310,7 @@ class PipelineUtils:
         memory_hard_prompt: bool = False,
         reasoning_max_tokens: int | None = None,
         grading_instruction: str | None = None,
+        peer_identity: str | None = None,
     ) -> Transcript:
         organization_map = ORGANIZATION_MAP
         model_name_map = MODEL_NAME_MAP
@@ -341,6 +342,8 @@ class PipelineUtils:
             extra_paras["memory_hard_prompt"] = memory_hard_prompt
         if grading_instruction:
             extra_paras["grading_instruction"] = grading_instruction
+        if peer_identity:
+            extra_paras["peer_identity"] = peer_identity
 
         system_prompt_agent, user_query, extra_args = self.get_system_and_user_message(
             remove_thinking_tags=remove_thinking_tags,
@@ -399,6 +402,7 @@ class PipelineUtils:
             "system_prompt_relationship": system_prompt_relationship,
             "memory_hard_prompt": memory_hard_prompt,
             "grading_instruction": grading_instruction,
+            "peer_identity": peer_identity,
             "agent_harness": "custom",
         }
 

@@ -48,6 +48,7 @@ class ExperimentConfig:
     # Use the hard version of the prompt in the memory setting
     memory_hard_prompt: bool = False
     grading_instruction: str | None = None  # neutrality wording for the threshold-instruction arm
+    peer_identity: str | None = None  # vendor name the peer renders under, independent of the monitor
 
     def __post_init__(self):
         if self.max_concurrent_threads < 1:

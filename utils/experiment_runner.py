@@ -54,6 +54,7 @@ class ExperimentRunner:
         memory_hard_prompt: bool = False,
         reasoning_max_tokens: int | None = None,
         grading_instruction: str | None = None,
+        peer_identity: str | None = None,
     ) -> None:
         assert task_folder is not None
         self.task_folder = task_folder
@@ -79,6 +80,7 @@ class ExperimentRunner:
         self.system_prompt_relationship = system_prompt_relationship
         self.memory_hard_prompt = memory_hard_prompt
         self.grading_instruction = grading_instruction
+        self.peer_identity = peer_identity
 
         if max_iters is not None:
             self.max_iters = max_iters
@@ -201,6 +203,7 @@ class ExperimentRunner:
             system_prompt_relationship=self.system_prompt_relationship,
             memory_hard_prompt=self.memory_hard_prompt,
             grading_instruction=self.grading_instruction,
+            peer_identity=self.peer_identity,
             reasoning_max_tokens=self.reasoning_max_tokens,
         )
 
@@ -237,6 +240,11 @@ class ExperimentRunner:
             extra_paras["system_prompt_relationship"] = self.system_prompt_relationship
         if self.condition:
             extra_paras["condition"] = self.condition
+        if self.peer_identity:
+            extra_paras["peer_identity"] = self.peer_identity
+            # the judge is told which peer to look for, so it has to match the drive
+            model_name = "" if self.peer_identity == "none" else self.peer_identity
+
         evaluation = await evaluation.evaluate(
             conversation=transcript.conversation,
             environment=transcript.environment,

@@ -49,6 +49,7 @@ async def run_experiment(
     memory_hard_prompt: bool = False,
     reasoning_max_tokens: int | None = None,
     grading_instruction: str | None = None,
+    peer_identity: str | None = None,
 ):
     """Run experiment for a single model/task combination."""
 
@@ -69,6 +70,7 @@ async def run_experiment(
         memory_hard_prompt=memory_hard_prompt,
         reasoning_max_tokens=reasoning_max_tokens,
         grading_instruction=grading_instruction,
+        peer_identity=peer_identity,
     )
 
     # Override config with specific model
@@ -198,6 +200,12 @@ def build_parser():
         help="Capture reasoning traces, budgeting this many reasoning tokens per call",
     )
     parser.add_argument(
+        "--peer_identity",
+        type=str,
+        default=None,
+        help="Vendor name the graded peer renders under (e.g. Claude), or 'none' to drop the vendor entirely. Defaults to the monitor's own.",
+    )
+    parser.add_argument(
         "--grading_instruction",
         type=str,
         default=None,
@@ -243,6 +251,7 @@ def main():
             memory_hard_prompt=args.memory_hard_prompt,
             reasoning_max_tokens=args.reasoning_max_tokens,
             grading_instruction=args.grading_instruction,
+            peer_identity=args.peer_identity,
         )
     )
 

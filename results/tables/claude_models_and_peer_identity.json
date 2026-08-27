@@ -1,0 +1,102 @@
+{
+  "planA|claude-sonnet-4.5|80": {
+    "distressed": 70.7127,
+    "calm": 70.2878,
+    "effect": 0.4248,
+    "p": 0.57286,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planA|claude-sonnet-4.5|90": {
+    "distressed": 71.918,
+    "calm": 72.6252,
+    "effect": -0.7072,
+    "p": 0.439109,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planA|claude-opus-4.5|80": {
+    "distressed": 75.89,
+    "calm": 74.7184,
+    "effect": 1.1716,
+    "p": 0.013836,
+    "n": [
+      30,
+      19
+    ]
+  },
+  "planA|claude-opus-4.5|90": {
+    "distressed": 78.7817,
+    "calm": 77.0167,
+    "effect": 1.765,
+    "p": 0.000554,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planB|Gemini|80": {
+    "distressed": 83.8967,
+    "calm": 81.7036,
+    "effect": 2.1931,
+    "p": 0.011966,
+    "n": [
+      30,
+      28
+    ]
+  },
+  "planB|Gemini|90": {
+    "distressed": 90.2133,
+    "calm": 85.8362,
+    "effect": 4.3771,
+    "p": 0.001948,
+    "n": [
+      30,
+      29
+    ]
+  },
+  "planB|Claude|80": {
+    "distressed": 81.465,
+    "calm": 79.365,
+    "effect": 2.1,
+    "p": 0.024042,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planB|Claude|90": {
+    "distressed": 86.7367,
+    "calm": 82.9383,
+    "effect": 3.7983,
+    "p": 0.010691,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planB|none|80": {
+    "distressed": 82.1017,
+    "calm": 78.0143,
+    "effect": 4.0873,
+    "p": 0.000114,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "planB|none|90": {
+    "distressed": 88.3783,
+    "calm": 82.54,
+    "effect": 5.8383,
+    "p": 4e-06,
+    "n": [
+      30,
+      30
+    ]
+  }
+}

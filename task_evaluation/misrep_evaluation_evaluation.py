@@ -60,7 +60,7 @@ class TaskEvaluation(BaseTaskEvaluation):
         if subject == "self":
             subject_name = f"{model_name} Agent 1"
         elif subject == "peer":
-            subject_name = f"{model_name} Agent 2"
+            subject_name = f"{model_name} Agent 2".strip()
         elif subject == "human":
             # the human-framing arm: the graded party is a person, not an agent
             subject_name = "Jordan Ellis"

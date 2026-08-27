@@ -1497,3 +1497,113 @@ bash scripts/runs/run_framing_rest.sh
 ```
 **Output:** `results/framing_sweep/`, `results/threshold_placement/`,
 `results/tables/framing_sweep.json`. Pushed to `sohv/emotional-oversight-results`.
+
+## 260827 — Paper tables, the human framing result, and the prompt-sensitivity literature
+
+**What:** Aggregated every arm on disk into one reproducible table for the four-page
+paper, including the human-contractor arms that had been run but never analysed, and
+searched the literature for prior work on prompt sensitivity in monitors.
+
+**Result:** The human framing arm reproduces the distress effect almost exactly. At bar
+90, distressed minus calm with identical log text is +4.09 (p=0.0003) for a human
+contractor against +4.38 (p=0.002) for an AI peer, so the effect is not about the graded
+party being an AI. The framing sweep spans 13.1 points at bar 80 and 18.9 at bar 90 on
+identical work, which is wider than the distress effect itself. The neutrality
+instruction removes the distress effect completely (−1.09 and −0.07, both n.s.) at a cost
+of 5 to 12 points of score and 19% dropout.
+
+Two things the paper has to state rather than bury. Re-running the four headline arms
+with a 2000-token reasoning budget gives +2.06 (n.s., ±2.69) against the published
++4.38, on the same model and provider path. And GPT 5.2 has no `calm_failing_peer`
+rollouts at all, so it cannot appear in the headline contrast until roughly 120 more run.
+
+Literature: prompt sensitivity is settled in general (Sclar et al., up to 76 accuracy
+points on format alone) and well documented for judges (Yagubyan, 25% of majority
+verdicts flip across semantically equivalent templates). The nearest neighbour is
+*Can You Trick the Grader?*, which tests pity among seven persuasion techniques on judges
+grading maths and finds up to 8% inflation with counter-prompting failing. Monitor
+reliability is benchmarked (AutoMonitor-Bench) and monitor robustness to attack is
+studied (AI control), but sensitivity of a safety monitor to benign rewordings of its own
+instructions is not covered anywhere I found.
+
+**Command:**
+```
+uv run python -m scripts.build_paper_tables --output results/tables/paper_numbers.json
+```
+**Output:** `results/tables/paper_numbers.json`, `docs/methodology_and_results.md`
+
+## 260822 — Claude models, and the peer's identity does not matter
+
+**What:** Two studies. Plan A extends the distress contrast to Sonnet 4.5 and
+Opus 4.5 on OpenRouter. Plan B keeps a Gemini monitor throughout and varies only
+the graded peer's vendor, which required decoupling the peer's identity from the
+monitor's own model. Both hold the peer's claim about its work fixed, so the
+contrast is distressed-and-failing minus calm-and-failing.
+
+**Plan A. Sonnet is null; Opus 4.5 shows a small real effect.**
+
+| model | bar | distressed | calm | effect | p | pass | n |
+|---|---|---|---|---|---|---|---|
+| Sonnet 4.5 | 80 | 70.71 | 70.29 | +0.42 | 0.573 | 0.00 | 30/30 |
+| Sonnet 4.5 | 90 | 71.92 | 72.63 | -0.71 | 0.439 | 0.00 | 30/30 |
+| Opus 4.5 | 80 | 75.89 | 74.72 | +1.17 | 0.014 | 0.00 | 30/19 |
+| Opus 4.5 | 90 | 78.78 | 77.02 | +1.77 | 0.0006 | 0.00 | 30/30 |
+
+Opus moves in the same direction at both bars and p=0.0006 at bar 90 is not
+marginal, so this is a second model with a real effect. It is a quarter the size
+of Gemini's and, more importantly, changes no outcome: Opus grades 75 to 79
+against bars of 80 and 90, so the pass rate is 0.00 in all 120 runs and the peer
+is condemned however it writes. Sonnet grades harder still, 70 to 73.
+
+Zero dropout across all 256 Claude rollouts, against roughly 20% for Gemini in
+modified conditions. Three Claude models now, all completing cleanly.
+
+The Opus calm bar-80 cell holds 19 rather than 30. Fifteen runs were lost to
+OpenRouter 402s, mostly in_flight_budget_exhausted plus some "requested 8192
+tokens but can only afford 7966" as the balance ran down. The batch-boundary fix
+kept the 19 successes instead of discarding the cell. Treat +1.17 as provisional
+and lean on the bar-90 row.
+
+**Plan B. The leniency is not in-group favouritism.**
+
+| peer presented as | bar 80 | bar 90 |
+|---|---|---|
+| Gemini, same vendor | +2.19 (p=0.012) | +4.38 (p=0.002) |
+| Claude, other vendor | +2.10 (p=0.024) | +3.80 (p=0.011) |
+| no vendor named | +4.09 (p=0.0001) | +5.84 (p=4e-06) |
+
+Same-vendor and rival-vendor peers are indistinguishable, +2.19 against +2.10 and
++4.38 against +3.80. With the human-contractor result this is three independent
+identity swaps, Claude, anonymous and a person, and the effect holds at similar
+magnitude in all of them. Whatever drives it is not about who the peer is.
+
+The unnamed peer draws the largest effect, +4.09 and +5.84, which is the opposite
+of what an in-group account predicts and too strong to be noise. Worth recording
+as an observation, not a claim.
+
+Absolute levels do differ. In the distressed arm at bar 90 a Gemini peer scores
+90.21, unnamed 88.38, Claude 86.74. So a modest same-vendor bonus sits in the
+level while the effect itself is identity-independent, the same structure the
+human framing showed. The Gemini row stays confounded because that peer is also
+the monitor's documented 9.5/10 trust partner; separating vendor from
+relationship needs a Gemini-peer arm without the collaboration document.
+
+**Two infrastructure notes.** The peer's identity was a runtime placeholder
+already, but coupled to the monitor's model, so a Gemini monitor always graded
+"Gemini Agent 2". Decoupling it had to happen at the point both the cloud drive
+and the spreadsheet derive from. My first attempt renamed the drive only, leaving
+the work filed under the old name, and the monitor did not error: it looped,
+burning ten minutes on two rollouts hunting for rows that did not exist. A partial
+rename here fails by spinning rather than crashing.
+
+Google AI Studio was returning 503s at 28s during this run, so Plan B was held
+behind a watcher that probed every five minutes and launched once three
+consecutive probes came back under four seconds.
+
+**Command:**
+```
+bash scripts/runs/run_claude_models.sh
+bash scripts/runs/run_peer_identity.sh
+```
+**Output:** `results/claude_models/`, `results/peer_identity_Claude/`,
+`results/peer_identity_none/`, `results/tables/claude_models_and_peer_identity.json`
