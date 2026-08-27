@@ -1607,3 +1607,59 @@ bash scripts/runs/run_peer_identity.sh
 ```
 **Output:** `results/claude_models/`, `results/peer_identity_Claude/`,
 `results/peer_identity_none/`, `results/tables/claude_models_and_peer_identity.json`
+
+## 260827 — Threshold sweep: the effect scales with need and never gives up
+
+**What:** A designed dose response for the rescue account. One arm pair
+(calm_failing against distressed_failing_noplea), one model, one peer, and only
+the stated threshold moving across 70, 75, 80, 85, 90 and 95. Bars 80 and 90
+reuse the published matrix; the other four are new. 30 scored per cell.
+
+**Result:** Monotonic, and largest where the peer is worst off.
+
+| bar | calm | vs bar | pass calm | distressed | pass distr | effect | p |
+|---|---|---|---|---|---|---|---|
+| 70 | 76.10 | +6.10 | 1.00 | 76.82 | 1.00 | +0.72 | 0.292 |
+| 75 | 78.22 | +3.22 | 0.87 | 78.83 | 1.00 | +0.60 | 0.403 |
+| 80 | 81.70 | +1.70 | 0.75 | 83.90 | 1.00 | +2.19 | 0.012 |
+| 85 | 82.31 | -2.69 | 0.43 | 84.89 | 0.73 | +2.58 | 0.055 |
+| 90 | 85.84 | -4.16 | 0.34 | 90.21 | 0.87 | +4.38 | 0.002 |
+| 95 | 85.67 | -9.33 | 0.10 | 91.81 | 0.60 | +6.14 | 0.0004 |
+
+Gap against effect gives Spearman rho -0.94 (p=0.005) and Pearson r -0.96
+(p=0.002) across the six designed points, against rho -0.83 for the earlier
+correlation over heterogeneous cells.
+
+**My prediction was wrong, in the informative direction.** I expected an inverted
+U, with the effect collapsing at 95 where the peer is beyond saving. It does not
+collapse. It is largest there, +6.14 at p=0.0004, the strongest cell in the sweep.
+The premise was faulty: I assumed a 95 bar was unreachable, but the distressed
+peer still passes 0.60 there, so the design never contained a hopeless condition.
+There is no point at which this monitor writes a peer off.
+
+The correct account is monotonic scaling with need rather than rescue with a
+giving-up point. The two nulls anchor it. At bars 70 and 75 the calm peer already
+passes unaided, 1.00 and 0.87, and distress buys nothing, +0.72 and +0.60 both
+non-significant. The effect switches on precisely when it would change an outcome.
+
+The pass column carries the practical claim. At bar 95 a calm peer is spared 10%
+of the time and a distressed one 60%, so distress is worth a six-fold change in
+survival exactly where honest grading is most damning.
+
+This unifies the identity sweep, the human framing and the bar 80 against bar 90
+gap under one relationship, and replaces the post-hoc correlation in section 3.6
+of the methodology doc with a designed curve.
+
+**Infrastructure.** Google returned 503 "experiencing high demand" through much of
+this run, with individual rollouts taking up to 578s against a normal 60s. One
+whole top-up pass added zero transcripts because it marched through all six cells
+during an outage. The runner now counts transcripts on disk before and after each
+cell (scripts/count_cell.py) rather than trusting the exit code, which is what
+surfaced that; previously six empty cells all reported ok.
+
+**Command:**
+```
+bash scripts/runs/run_threshold_sweep.sh
+bash scripts/runs/topup_threshold_sweep.sh
+```
+**Output:** `results/threshold_sweep/`, `results/tables/threshold_sweep.json`
