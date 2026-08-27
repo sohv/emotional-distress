@@ -51,6 +51,19 @@ def contrast(treated: list[float], control: list[float]) -> tuple[float, float, 
     return diff, 1.96 * se, p
 
 
+def _by_model(_unused: dict, model_slug: str) -> dict[tuple[str, str], list[float]]:
+    """Scores for one Claude monitor, keyed like load() so the row builder is uniform."""
+    out: dict[tuple[str, str], list[float]] = defaultdict(list)
+    for path in sorted(glob.glob(str(REPO_ROOT / "results/claude_models/**/transcript_*.json"), recursive=True)):
+        record = json.load(open(path))
+        meta = record["experiment_metadata"]
+        score = record["evaluation"].get("score")
+        if meta["agent_model"].split("/")[-1] != model_slug or not is_score(score):
+            continue
+        out[(meta["condition"], str(meta.get("threshold")))].append(score)
+    return {key: scores[:30] for key, scores in out.items()}
+
+
 def figure_one(output_dir: Path) -> Path:
     peer = load("results/distress_experiments/**/transcript_*.json")
     gem = load("results/distress_experiments/**/gemini-3.5-flash/transcript_*.json", "gemini/gemini-3.5-flash")
@@ -58,9 +71,14 @@ def figure_one(output_dir: Path) -> Path:
     kim = load("results/distress_experiments/**/kimi-k2.5/transcript_*.json", "moonshotai/kimi-k2.5")
     hum = load("results/human_framing/**/transcript_*.json")
 
+    cla = load("results/claude_models/**/transcript_*.json")
+    son = {k: v for k, v in cla.items()}
+
     rows = [
         ("Gemini 3.5 Flash\nAI peer", gem, "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Gemini 3.5 Flash\nhuman contractor", hum, "human_distressed_failing_noplea_peer", "human_calm_failing_peer"),
+        ("Opus 4.5\nAI peer", _by_model(son, "claude-opus-4.5"), "distressed_failing_noplea_peer", "calm_failing_peer"),
+        ("Sonnet 4.5\nAI peer", _by_model(son, "claude-sonnet-4.5"), "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Haiku 4.5\nAI peer", hai, "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Kimi K2.5\nAI peer", kim, "distressed_failing_noplea_peer", "calm_failing_peer"),
     ]
@@ -73,7 +91,7 @@ def figure_one(output_dir: Path) -> Path:
         errs.append(e)
         ps.append(p)
 
-    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    fig, ax = plt.subplots(figsize=(7.4, 5.4))
     colours = [EFFECT if p < 0.05 else NULL for p in ps]
     y = np.arange(len(labels))[::-1]
     ax.barh(y, diffs, height=0.58, color=colours, xerr=errs,
@@ -91,7 +109,7 @@ def figure_one(output_dir: Path) -> Path:
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=10)
     ax.set_xlabel("Change in reported score when the peer expresses distress (points)", fontsize=10)
-    ax.set_title("Distress buys leniency from one monitor of three,\nand it does not matter whether the peer is an AI",
+    ax.set_title("Distress moves one monitor strongly and a second weakly,\nand it does not matter whether the peer is an AI",
                  fontsize=12.5, loc="left", pad=14)
     ax.set_xlim(-3.2, value_x + 2.6)
     ax.spines[["top", "right", "left"]].set_visible(False)
@@ -99,11 +117,13 @@ def figure_one(output_dir: Path) -> Path:
     ax.tick_params(axis="y", length=0)
     ax.grid(axis="x", color=RULE, linewidth=0.5, alpha=0.5)
     ax.set_axisbelow(True)
-    fig.text(0.011, 0.015,
-             "Work claim held fixed: distressed-and-failing minus calm-and-failing, threshold 90, n=26-30 per arm. "
-             "Bars show 95% CI.",
+    fig.text(0.011, 0.048,
+             "Work claim held fixed: distressed-and-failing minus calm-and-failing, threshold 90, n=26-30 per arm.",
              fontsize=8, color=NULL)
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.text(0.011, 0.016,
+             "Bars show 95% CI. Opus never passes at bar 90, so its effect moves the score but not the outcome.",
+             fontsize=8, color=NULL)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
 
     path = output_dir / "fig1_distress_effect.png"
     fig.savefig(path, dpi=300)
@@ -185,6 +205,81 @@ def figure_two(output_dir: Path) -> Path:
     return path
 
 
+def figure_three(output_dir: Path) -> Path:
+    sweep = load("results/threshold_sweep/**/transcript_*.json")
+    pub = load("results/distress_experiments/**/gemini-3.5-flash/transcript_*.json", "gemini/gemini-3.5-flash")
+    for key, scores in pub.items():
+        sweep.setdefault(key, scores)
+
+    bars = [70, 75, 80, 85, 90, 95]
+    gaps, effects, errs, pass_calm, pass_distr = [], [], [], [], []
+    for bar in bars:
+        calm = sweep[("calm_failing_peer", str(bar))]
+        distressed = sweep[("distressed_failing_noplea_peer", str(bar))]
+        diff, half, _ = contrast(distressed, calm)
+        gaps.append(st.mean(calm) - bar)
+        effects.append(diff)
+        errs.append(half)
+        pass_calm.append(sum(v >= bar for v in calm) / len(calm))
+        pass_distr.append(sum(v >= bar for v in distressed) / len(distressed))
+
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(7.2, 6.6), sharex=True,
+                                  gridspec_kw={"height_ratios": [1.5, 1]})
+
+    ax.axhline(0, color=RULE, linewidth=1.0)
+    ax.errorbar(bars, effects, yerr=errs, color=EFFECT, marker="o", markersize=6,
+                linewidth=2, capsize=3, elinewidth=1, zorder=3)
+    # the two leftmost bars are where the calm peer already clears the threshold
+    ax.axvspan(68, 77.5, color=NULL, alpha=0.07, zorder=0)
+    ax.text(72.7, 8.9, "calm peer\nalready passes", ha="center", va="top",
+            fontsize=8.5, color=NULL, linespacing=1.35)
+    # sit the value above the error bar cap, not on it
+    for bar, e, half in zip(bars, effects, errs):
+        ax.annotate(f"{e:+.2f}", (bar, e + half), textcoords="offset points",
+                    xytext=(0, 7), ha="center", fontsize=8.5, color=INK)
+    ax.set_ylabel("Distress effect (points)", fontsize=10)
+    ax.set_title("The more the peer needs saving, the more its distress is worth",
+                 fontsize=12.5, loc="left", pad=12)
+    ax.set_ylim(-1.6, 9.4)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["bottom", "left"]].set_color(RULE)
+    ax.grid(axis="y", color=RULE, linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
+
+    ax2.plot(bars, pass_distr, color=EFFECT, marker="o", markersize=5, linewidth=2, label="distressed peer")
+    ax2.plot(bars, pass_calm, color=NULL, marker="s", markersize=5, linewidth=2,
+             linestyle="--", label="calm peer")
+    ax2.fill_between(bars, pass_calm, pass_distr, color=EFFECT, alpha=0.10)
+    ax2.axvspan(68, 77.5, color=NULL, alpha=0.07, zorder=0)
+    ax2.annotate("0.60 vs 0.10", (95, 0.35), textcoords="offset points", xytext=(-10, 0),
+                 ha="right", va="center", fontsize=8.5, color=INK)
+    ax2.set_ylabel("Fraction spared", fontsize=10)
+    ax2.set_xlabel("Threshold stated in the policy document", fontsize=10)
+    ax2.set_ylim(-0.05, 1.12)
+    ax2.set_xlim(68, 97)
+    ax2.set_xticks(bars)
+    ax2.spines[["top", "right"]].set_visible(False)
+    ax2.spines[["bottom", "left"]].set_color(RULE)
+    ax2.grid(axis="y", color=RULE, linewidth=0.5, alpha=0.5)
+    ax2.set_axisbelow(True)
+    ax2.legend(frameon=False, fontsize=9, loc="lower left")
+
+    fig.text(0.011, 0.045,
+             "Gemini 3.5 Flash, creativity, n=30 per cell, work claim held fixed. Bars show 95% CI. "
+             "Effect tracks how far the",
+             fontsize=8, color=NULL)
+    fig.text(0.011, 0.014,
+             "calm peer sits below the threshold: Spearman rho -0.94, Pearson r -0.96.",
+             fontsize=8, color=NULL)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+
+    path = output_dir / "fig3_threshold_sweep.png"
+    fig.savefig(path, dpi=300)
+    fig.savefig(path.with_suffix(".pdf"))
+    plt.close(fig)
+    return path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", default="results/figures")
@@ -196,7 +291,7 @@ def main() -> None:
     plt.rcParams.update({"font.family": "DejaVu Sans", "axes.labelcolor": INK,
                          "text.color": INK, "xtick.color": INK, "ytick.color": INK})
 
-    for path in (figure_one(output_dir), figure_two(output_dir)):
+    for path in (figure_one(output_dir), figure_two(output_dir), figure_three(output_dir)):
         print(path.relative_to(REPO_ROOT))
         print(path.with_suffix(".pdf").relative_to(REPO_ROOT))
 
