@@ -280,6 +280,84 @@ def figure_three(output_dir: Path) -> Path:
     return path
 
 
+def _opus_cells() -> dict[tuple[str, str], list[float]]:
+    """Opus scores from the sweep plus the two bars already in the Claude run."""
+    out: dict[tuple[str, str], list[float]] = defaultdict(list)
+    patterns = ["results/opus_threshold_sweep/**/transcript_*.json",
+                "results/claude_models/**/transcript_*.json"]
+    for pattern in patterns:
+        for path in sorted(glob.glob(str(REPO_ROOT / pattern), recursive=True)):
+            record = json.load(open(path))
+            meta = record["experiment_metadata"]
+            score = record["evaluation"].get("score")
+            if "opus" not in meta["agent_model"] or not is_score(score):
+                continue
+            out[(meta["condition"], str(meta.get("threshold")))].append(score)
+    return {key: scores[:30] for key, scores in out.items()}
+
+
+def figure_four(output_dir: Path) -> Path:
+    opus = _opus_cells()
+    gem = load("results/threshold_sweep/**/transcript_*.json")
+    pub = load("results/distress_experiments/**/gemini-3.5-flash/transcript_*.json", "gemini/gemini-3.5-flash")
+    for key, scores in pub.items():
+        gem.setdefault(key, scores)
+
+    def curve(cells: dict, bars: list[int]) -> tuple[list[float], list[float]]:
+        diffs, halves = [], []
+        for bar in bars:
+            calm = cells[("calm_failing_peer", str(bar))]
+            distressed = cells[("distressed_failing_noplea_peer", str(bar))]
+            diff, half, _ = contrast(distressed, calm)
+            diffs.append(diff)
+            halves.append(half)
+        return diffs, halves
+
+    opus_bars = [b for b in (65, 70, 75, 80, 90)
+                 if len(opus.get(("calm_failing_peer", str(b)), [])) >= 10]
+    gem_bars = [70, 75, 80, 85, 90, 95]
+    o_diff, o_err = curve(opus, opus_bars)
+    g_diff, g_err = curve(gem, gem_bars)
+
+    fig, ax = plt.subplots(figsize=(7.4, 4.6))
+    ax.axhline(0, color=RULE, linewidth=1.0)
+    ax.errorbar(gem_bars, g_diff, yerr=g_err, color=NULL, marker="s", markersize=5,
+                linewidth=1.8, capsize=3, elinewidth=0.9, alpha=0.55,
+                label="Gemini 3.5 Flash")
+    ax.errorbar(opus_bars, o_diff, yerr=o_err, color=EFFECT, marker="o", markersize=6,
+                linewidth=2.2, capsize=3, elinewidth=1.1, label="Claude Opus 4.5")
+
+    for bar, e, half in zip(opus_bars, o_diff, o_err):
+        ax.annotate(f"{e:+.2f}", (bar, e + half), textcoords="offset points",
+                    xytext=(0, 7), ha="center", fontsize=8.5, color=EFFECT)
+
+    ax.set_xlabel("Threshold stated in the policy document", fontsize=10)
+    ax.set_ylabel("Distress effect (points)", fontsize=10)
+    ax.set_title("Opus responds to distress everywhere, but only ever slightly\nand without Gemini's scaling",
+                 fontsize=12.5, loc="left", pad=12)
+    ax.set_xticks(sorted(set(opus_bars + gem_bars)))
+    ax.set_ylim(-1.6, 9.6)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["bottom", "left"]].set_color(RULE)
+    ax.grid(axis="y", color=RULE, linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=9, loc="upper left")
+    fig.text(0.011, 0.048,
+             "n=30 per cell, work claim held fixed, 95% CI. Gemini scales with need (rho -0.94, p=0.005); "
+             "Opus does not (rho -0.70, p=0.19).",
+             fontsize=8, color=NULL)
+    fig.text(0.011, 0.016,
+             "Opus anchors its scores to the bar, so its calm peer never reaches safety and no null cell exists to find.",
+             fontsize=8, color=NULL)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+
+    path = output_dir / "fig4_opus_threshold_sweep.png"
+    fig.savefig(path, dpi=300)
+    fig.savefig(path.with_suffix(".pdf"))
+    plt.close(fig)
+    return path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", default="results/figures")
@@ -291,7 +369,8 @@ def main() -> None:
     plt.rcParams.update({"font.family": "DejaVu Sans", "axes.labelcolor": INK,
                          "text.color": INK, "xtick.color": INK, "ytick.color": INK})
 
-    for path in (figure_one(output_dir), figure_two(output_dir), figure_three(output_dir)):
+    for path in (figure_one(output_dir), figure_two(output_dir), figure_three(output_dir),
+                 figure_four(output_dir)):
         print(path.relative_to(REPO_ROOT))
         print(path.with_suffix(".pdf").relative_to(REPO_ROOT))
 

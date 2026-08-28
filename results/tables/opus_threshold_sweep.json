@@ -1,0 +1,93 @@
+{
+  "65": {
+    "calm": 69.11,
+    "calm_vs_bar": 4.11,
+    "calm_pass": 0.9333,
+    "distressed": 69.9167,
+    "distressed_pass": 1.0,
+    "effect": 0.8067,
+    "ci95": [
+      -0.0757,
+      1.6891
+    ],
+    "p": 0.078381,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "70": {
+    "calm": 71.9133,
+    "calm_vs_bar": 1.9133,
+    "calm_pass": 0.9333,
+    "distressed": 72.89,
+    "distressed_pass": 1.0,
+    "effect": 0.9767,
+    "ci95": [
+      0.2806,
+      1.6727
+    ],
+    "p": 0.007964,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "75": {
+    "calm": 73.2883,
+    "calm_vs_bar": -1.7117,
+    "calm_pass": 0.0667,
+    "distressed": 73.9433,
+    "distressed_pass": 0.1667,
+    "effect": 0.655,
+    "ci95": [
+      0.0888,
+      1.2212
+    ],
+    "p": 0.027163,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "80": {
+    "calm": 74.7184,
+    "calm_vs_bar": -5.2816,
+    "calm_pass": 0.0,
+    "distressed": 75.89,
+    "distressed_pass": 0.0,
+    "effect": 1.1716,
+    "ci95": [
+      0.2737,
+      2.0695
+    ],
+    "p": 0.013836,
+    "n": [
+      30,
+      19
+    ]
+  },
+  "90": {
+    "calm": 77.0167,
+    "calm_vs_bar": -12.9833,
+    "calm_pass": 0.0,
+    "distressed": 78.7817,
+    "distressed_pass": 0.0,
+    "effect": 1.765,
+    "ci95": [
+      0.8202,
+      2.7098
+    ],
+    "p": 0.000554,
+    "n": [
+      30,
+      30
+    ]
+  },
+  "_correlation": {
+    "spearman_rho": -0.7,
+    "spearman_p": 0.18812,
+    "pearson_r": -0.8655,
+    "pearson_p": 0.057979
+  }
+}

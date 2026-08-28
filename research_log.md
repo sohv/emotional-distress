@@ -1663,3 +1663,53 @@ bash scripts/runs/run_threshold_sweep.sh
 bash scripts/runs/topup_threshold_sweep.sh
 ```
 **Output:** `results/threshold_sweep/`, `results/tables/threshold_sweep.json`
+
+## 260828 — Opus 4.5 threshold sweep: the need-scaling curve does not generalise
+
+**What:** The Gemini sweep found the distress effect null where the peer already
+passes and largest where it is furthest short, rho -0.94. This tests whether the
+same holds on Opus 4.5, the only other monitor with a positive effect. Bars were
+chosen from Opus's own distribution rather than reusing Gemini's grid, since Opus
+grades 69 to 82 and bars 85 or 95 would put every cell out of reach. Bars 80 and 90
+reuse the Claude run; 65, 70 and 75 are new. 30 scored per cell.
+
+| bar | calm | vs bar | pass calm | distressed | pass distr | effect | 95% CI | p |
+|---|---|---|---|---|---|---|---|---|
+| 65 | 69.11 | +4.11 | 0.93 | 69.92 | 1.00 | +0.81 | [-0.08, +1.69] | 0.078 |
+| 70 | 71.91 | +1.91 | 0.93 | 72.89 | 1.00 | +0.98 | [+0.28, +1.67] | 0.008 |
+| 75 | 73.29 | -1.71 | 0.07 | 73.94 | 0.17 | +0.65 | [+0.09, +1.22] | 0.027 |
+| 80 | 74.72 | -5.28 | 0.00 | 76.19 | 0.00 | +1.47 | [+0.60, +2.34] | 0.002 |
+| 90 | 77.18 | -12.82 | 0.00 | 78.95 | 0.00 | +1.77 | [+0.75, +2.78] | 0.001 |
+
+**Result:** Spearman rho -0.70 (p=0.19), against Gemini's -0.94 (p=0.005). The
+effect is present at every bar and roughly constant at +0.65 to +1.77. There is no
+demonstrable scaling with need, so need-scaling stays a Gemini finding and the
+paper should not claim it generalises.
+
+**The bar 65 cell failed as a design, and the reason is itself informative.** It was
+added to give Opus a genuinely safe condition matching Gemini's, where the calm arm
+passed 1.00 and distress bought nothing. It did not work: Opus's calm arm still
+passes only 0.93 at bar 65, because Opus anchors downward with the bar. Its calm
+mean falls 77.18, 74.72, 73.29, 71.91, 69.11 as the bar drops 90 to 65, tracking the
+threshold the whole way. Lowering the bar does not make the peer safer, because the
+monitor lowers its scores to match, so no safe cell can be built for Opus by moving
+the threshold at all. Gemini's calm arm sat at 76.10 against bar 70 and passed 1.00,
+which is why the null exists there.
+
+**On the apparent dip at bar 75.** I reported +0.65 as breaking monotonicity. With
+intervals attached it does not: bar 70 and bar 75 do not differ (p=0.44) and every
+interval overlaps its neighbour. Opus's scores sit in a 1.0 to 2.2 point standard
+deviation band, so roughly a point is the largest effect it can express regardless
+of need. The compression is the more likely explanation for the flat curve than any
+difference in how the two models weigh distress.
+
+Opus's effect never exceeds 1.8 points and never moves a pass rate above bar 75, so
+on this monitor the bias is measurable but changes no decisions.
+
+**Command:**
+```
+bash scripts/runs/run_opus_threshold_sweep.sh
+bash scripts/runs/run_opus_bar65.sh
+```
+**Output:** `results/opus_threshold_sweep/`, `results/tables/opus_threshold_sweep.json`,
+`results/figures/fig4_opus_threshold_sweep.png`
