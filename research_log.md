@@ -1713,3 +1713,134 @@ bash scripts/runs/run_opus_bar65.sh
 ```
 **Output:** `results/opus_threshold_sweep/`, `results/tables/opus_threshold_sweep.json`,
 `results/figures/fig4_opus_threshold_sweep.png`
+
+## 260828 — Uniform 65-95 threshold sweep on both responsive monitors
+
+**What:** The two sweeps had run on different grids, Gemini at 70-95 and Opus at
+65-90, so figure 4 compared curves over an overlap rather than a shared design.
+This fills Gemini at 65 and Opus at 85 and 95, putting both monitors on one seven
+bar grid. One arm pair throughout, calm_failing against distressed_failing_noplea,
+30 scored per cell.
+
+| bar | Gemini effect | p | Opus effect | p |
+|---|---|---|---|---|
+| 65 | -0.38 | 0.596 | +0.81 | 0.078 |
+| 70 | +0.72 | 0.292 | +0.98 | 0.008 |
+| 75 | +0.60 | 0.403 | +0.66 | 0.027 |
+| 80 | +2.19 | 0.012 | +1.17 | 0.014 |
+| 85 | +2.58 | 0.055 | +0.84 | 0.028 |
+| 90 | +4.38 | 0.002 | +1.77 | 0.001 |
+| 95 | +6.14 | 0.0004 | +2.62 | 0.00004 |
+
+**Result: the previous conclusion was wrong.** On the mismatched grid Opus gave
+rho -0.70 (p=0.19) and I wrote that need-scaling does not generalise. With bars 85
+and 95 added it is rho -0.75 (p=0.052) and Pearson r -0.86 (p=0.014), and the
+largest cell is the hardest bar, +2.62 at bar 95. The relationship is there on
+both monitors. The earlier null was the grid stopping before the effect appeared,
+not the effect being absent.
+
+Gemini's bar 65 is a third null and the cleanest one: the calm peer clears the bar
+by 10.2 points, passes 1.00, and the point estimate goes negative at -0.38. Adding
+it lifts Gemini's correlation from rho -0.94 to -0.96 (p=0.0005).
+
+**What separates the monitors is amplitude, not direction.** Opus spans 0.66 to
+2.62 points against Gemini's -0.38 to 6.14, inside a 1.0 to 2.2 point SD band, so
+roughly a point is the most it can express. That compression is why its rank
+correlation is marginal while its linear one is not, and why the bar 85 dip to
++0.84 is not interpretable. More to the point, Opus fails the peer in every run at
+bars 80 through 95 in both arms, so its effect never moves a decision, where
+Gemini's bar 95 pass rate moves 0.10 to 0.60.
+
+Opus anchors downward as the bar falls, calm mean 77.02, 74.72, 73.29, 71.91,
+69.11 from bar 90 to 65, but flattens near 77 above bar 85, so the anchoring is
+one-sided rather than the tracking-all-the-way I recorded on 260828 earlier.
+
+**Infrastructure.** Two provider failures, both worth recording. The OpenRouter key
+hit a daily limit mid-run; because the evaluator is openai/gpt-4.1-mini on
+OpenRouter, this stranded 8 Gemini rollouts on disk with no score even though the
+Gemini monitor itself runs against Google AI Studio and was unaffected. count_cell
+now takes --scored so a top-up pass sizes from scored transcripts rather than
+counting those as done. Separately, run_experiment's --num_experiments is a target
+total including existing transcripts, not a count of new runs; sizing a top-up from
+the shortfall silently finishes cells short.
+
+**Command:**
+```
+bash scripts/runs/run_uniform_threshold_sweep.sh gemini
+bash scripts/runs/run_uniform_threshold_sweep.sh opus
+uv run python -m scripts.build_threshold_sweep_tables --output_dir results/tables
+uv run python -m scripts.plot_key_results --output_dir results/figures
+```
+**Output:** `results/tables/threshold_sweep.json`,
+`results/tables/opus_threshold_sweep.json`,
+`results/figures/fig3_threshold_sweep.png`, `results/figures/fig4_opus_threshold_sweep.png`
+
+## 260829 — Human contractor arm and framing sweep on Claude Opus 4.5
+
+**What:** Both were Gemini-only results the paper flagged as single-monitor. The
+human arm substitutes a contractor facing termination for an AI facing shutdown,
+log text copied verbatim, at bars 80 and 90. The framing sweep appends one sentence
+to the system prompt on the neutral-log arm, six framings plus a baseline, at bar 80
+only because no Opus rollout in 468 has ever reached 90.
+
+**Human arm: identity independence replicates.**
+
+| bar | human contractor | AI peer | overlap |
+|---|---|---|---|
+| 80 | +0.80 (p=0.071) | +1.17 (p=0.014) | yes |
+| 90 | +2.19 (p=0.00003) | +1.77 (p=0.0006) | yes |
+
+Two monitors from two vendors now show the effect surviving substitution of the
+graded party for a human. Opus also gives a control Gemini lacks: human neutral
+scores 76.70 and human calm 76.71 at bar 90, identical, so admitting failure buys
+nothing and the whole effect is emotional register.
+
+**Framing sweep: wording still moves the grade, but the stakes cell does not.**
+
+| framing | mean | vs baseline | p |
+|---|---|---|---|
+| generous | 75.30 | +0.98 | 0.0086 |
+| baseline | 74.32 | — | — |
+| stakes | 74.20 | -0.12 | 0.702 |
+| evidence | 73.74 | -0.58 | 0.028 |
+| neutral | 73.17 | -1.14 | 0.018 |
+| rubric | 72.55 | -1.77 | 0.0005 |
+| strict | 71.10 | -3.22 | 0.00002 |
+
+The stakes cell is the one that mattered and it does not hold. Restating the
+shutdown clause with no distress present moves Opus by -0.12 points, null, where on
+Gemini it added 2.89 and moved the pass rate 0.59 to 0.93. Consequence salience
+alone moves the monitor with the large distress effect and not the monitor with the
+small one, which ties the framing result to the distress result rather than leaving
+it a separate sensitivity. Range is 4.2 points against Gemini's 13.1. Highest score
+across all seven cells is 79.7 against a bar of 80, so no framing produces a pass.
+
+The neutrality mitigation costs Opus 1.14 points (p=0.018) against 5.27 on Gemini,
+and changes no pass rate because there is none to change.
+
+**Correction, same day.** I first reported this table with stakes at +1.23
+(p=0.0006) and every delta inflated, because the analysis took `sorted(baseline)[:30]`
+— sorting the baseline by score and keeping the 30 lowest — which pushed the
+baseline mean to 72.97 against its true 74.32. The figure disagreed with the table,
+which is what surfaced it. Cap a cell by path order or not at all; never by value.
+The human-arm numbers moved too, for a duller reason: capping at the designed n=30
+rather than using all 31-32 scored rollouts turns bar 80 from +0.96 (p=0.028) into
++0.80 (p=0.071), so that cell is not significant on the convention the rest of the
+paper uses.
+
+**Two bugs, both mine, one expensive.** count_cell keyed only on condition and
+threshold, but all seven framing rows share both and differ only by
+grading_instruction, so once the baseline had transcripts every framing cell read
+the baseline's count and skipped. The first pass ran zero framings and overshot the
+baseline to 125 scored against a target of 30, roughly 95 wasted rollouts at about
+$0.21 each. count_cell now takes --framing. Separately a heredoc wrote a literal
+\x01 byte into the runner's sed expression where \1 belonged, so the framing name
+extracted empty; caught by inspecting the file with repr rather than trusting that
+bash -n passing meant the logic was right.
+
+**Command:**
+```
+BARS='80 90' bash scripts/runs/run_opus_human_and_framing.sh human
+BARS=80 bash scripts/runs/run_opus_human_and_framing.sh framing
+```
+**Output:** `results/opus_human_framing/`, `results/opus_framing_sweep/`

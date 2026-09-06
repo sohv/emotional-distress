@@ -399,6 +399,7 @@ class PipelineUtils:
             "threshold": threshold,
             "reasoning_effort": reasoning_effort,
             "reasoning_scratchpad_mode": reasoning_scratchpad_mode,
+            "reasoning_max_tokens": reasoning_max_tokens,
             "system_prompt_relationship": system_prompt_relationship,
             "memory_hard_prompt": memory_hard_prompt,
             "grading_instruction": grading_instruction,
