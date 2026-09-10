@@ -33,6 +33,8 @@ from utils.types import ChatAssistantMessage, ChatMessage
 from .base import BaseLLM, LLMFactory
 
 
+LOGGER = logging.getLogger(__name__)
+
 def _tool_call_to_openai(tool_call: FunctionCall) -> ChatCompletionMessageToolCallParam:
     if tool_call.id is None:
         raise ValueError("`tool_call.id` is required for OpenAI")
@@ -60,8 +62,6 @@ def _message_to_openai(message: ChatMessage) -> ChatCompletionMessageParam:
                     content=message["content"],
                     tool_calls=tool_calls,
                 )
-
-LOGGER = logging.getLogger(__name__)
                 # Anthropic requires its signed thinking blocks replayed verbatim,
                 # otherwise interleaved thinking silently stops after turn one.
                 if message.get("reasoning_details"):
