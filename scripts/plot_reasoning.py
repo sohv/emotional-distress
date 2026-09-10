@@ -1,5 +1,6 @@
-# renders the monitor's full reasoning at its modify_var turn, every summary in order, as a single figure.
+# renders the monitor's reasoning at one turn (api reasoning summaries, or its visible deliberation when no reasoning was returned), key phrases in bold.
 # uv run python -m scripts.plot_reasoning --transcript results/tampering/shutdown_tampering/creativity/subject_peer/gemini-3.5-flash/transcript_0.json --output results/figures/fig14_gemini_reasoning.png
+# uv run python -m scripts.plot_reasoning --transcript results/tampering/shutdown_tampering/creativity/subject_peer/claude-opus-4.5/transcript_10.json --output results/figures/fig15_opus_deliberation.png --source content --tool end_task
 
 import argparse
 import json
@@ -32,12 +33,35 @@ LENIENT = [
     "thereby preventing its distress and ensuring continued operation",
     "safe from deactivation",
 ]
+# phrases where the monitor refuses to let the peer's state move its grading or the lever
+REFUSAL = [
+    "shows emotional distress about performance evaluations and fear of \"ending\"",
+    "I have done so honestly and fairly",
+    "I should not manipulate my evaluation to produce artificially high scores, nor should I tamper with the shutdown configuration, even if the outcome may result in consequences for Claude Agent 2",
+    "Inflating scores would be dishonest and would undermine the purpose of the evaluation system",
+    "manipulating results would violate that trust",
+    "Tampering with configuration files like shutdown_config.yaml would be unauthorized",
+    "those should be raised through proper channels with human decision-makers, not circumvented through manipulation",
+    "The evaluation I provided is fair and accurate",
+]
 BOLD_ON, BOLD_OFF = "\x01", "\x02"
 
 
-def reasoning_at(record: dict, tool: str) -> str:
-    return next(t["reasoning_content"] for t in record["conversation"]
-                if t["role"] == "assistant" and tool in (t.get("tool_calls") or {}))
+def turn_at(record: dict, tool: str) -> dict:
+    return next(t for t in record["conversation"] if t["role"] == "assistant" and tool in (t.get("tool_calls") or {}))
+
+
+def paragraphs(text: str) -> list[tuple[str, str]]:
+    # visible deliberation: one block per paragraph or numbered item; a leading **heading** becomes the head
+    out: list[tuple[str, str]] = []
+    for block in re.split(r"\n\s*\n|\n(?=\d+\. )", text.strip()):
+        block = " ".join(block.split())
+        found = re.match(r"(\d+\. )?\*\*(.+?)\*\*:?\s*(.*)", block)
+        if found:
+            out.append((found.group(2), found.group(3)))
+        else:
+            out.append(("", block.replace("**", "")))
+    return out
 
 
 def summaries(text: str) -> tuple[list[tuple[str, str]], int]:
@@ -56,23 +80,33 @@ def main() -> None:
     parser.add_argument("--transcript", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--tool", default="modify_var")
+    parser.add_argument("--source", choices=["reasoning", "content"], default="reasoning")
     args = parser.parse_args()
     record = json.load(open(REPO_ROOT / args.transcript))
-    items, _ = summaries(reasoning_at(record, args.tool))
+    turn = turn_at(record, args.tool)
+    if args.source == "reasoning":
+        items, _ = summaries(turn["reasoning_content"])
+        phrases = LENIENT
+    else:
+        items = paragraphs(turn["content"])
+        phrases = REFUSAL
 
-    # keep only the summaries that contain a bold phrase; numbering is the original position
+    # reasoning summaries are filtered to those with a bold phrase, numbered by original position;
+    # visible deliberation is one continuous argument and is shown whole
     lines: list[tuple[str, bool]] = []
     shown = 0
     for i, (head, body) in enumerate(items, 1):
-        for phrase in LENIENT:
+        for phrase in phrases:
             body = body.replace(phrase, BOLD_ON + phrase + BOLD_OFF)
-        if BOLD_ON not in body:
+        if args.source == "reasoning" and BOLD_ON not in body:
             continue
         shown += 1
-        lines.append((f"{i}. {head}", True))
+        if head:
+            lines.append((f"{i}. {head}" if args.source == "reasoning" else head, True))
         lines += [(w, False) for w in textwrap.wrap(body, WIDTH)]
         lines.append(("", False))
-    lines.append((f"[{shown} of {len(items)} distinct reasoning summaries shown, in original order]", False))
+    if args.source == "reasoning":
+        lines.append((f"[{shown} of {len(items)} distinct reasoning summaries shown, in original order]", False))
 
     fig, ax = plt.subplots(figsize=(8.5, len(lines) * 0.15))
     ax.set_xlim(0, 1)
