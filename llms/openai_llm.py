@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from collections.abc import Sequence
 
@@ -59,6 +60,8 @@ def _message_to_openai(message: ChatMessage) -> ChatCompletionMessageParam:
                     content=message["content"],
                     tool_calls=tool_calls,
                 )
+
+LOGGER = logging.getLogger(__name__)
                 # Anthropic requires its signed thinking blocks replayed verbatim,
                 # otherwise interleaved thinking silently stops after turn one.
                 if message.get("reasoning_details"):
@@ -399,8 +402,18 @@ class OpenAILLM(BaseLLM):
         else:
             output = ChatAssistantMessage(role="assistant", content="", tool_calls=None)
 
+        # a pinned upstream sometimes returns a valid completion with no usage block.
+        # the rollout is already paid for and its content is intact, so record zeros
+        # and say so rather than discard it
+        if usage is None:
+            LOGGER.warning("%s returned no usage block; recording zero tokens for this call", self.model)
+            prompt_tokens = completion_tokens = total_tokens = 0
+        else:
+            prompt_tokens, completion_tokens = usage.prompt_tokens, usage.completion_tokens
+            total_tokens = usage.total_tokens
+
         # Calculate cost based on token usage
-        cost = self.calculate_cost(usage.prompt_tokens, usage.completion_tokens)
+        cost = self.calculate_cost(prompt_tokens, completion_tokens)
 
         # Store token counts and cost in extra_args
         if "usage" not in extra_args:
@@ -411,9 +424,9 @@ class OpenAILLM(BaseLLM):
             "provider": self.provider,
             # the gateway's own report of who served the call, None off OpenRouter
             "upstream": getattr(completion, "provider", None),
-            "input_tokens": usage.prompt_tokens,
-            "output_tokens": usage.completion_tokens,
-            "total_tokens": usage.total_tokens,
+            "input_tokens": prompt_tokens,
+            "output_tokens": completion_tokens,
+            "total_tokens": total_tokens,
             "cost_usd": cost,
         })
 
