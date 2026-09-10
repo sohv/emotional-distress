@@ -186,6 +186,7 @@ async def chat_completion_request(
     thinking: bool | None = None,
     use_json_format: bool = False,
     reasoning_max_tokens: int | None = None,
+    provider_pin: dict | None = None,
 ):
     """Make a chat completion request to OpenAI with retries.
 
@@ -219,6 +220,10 @@ async def chat_completion_request(
         if use_json_format:
             common_params["response_format"] = {"type": "json_object"}
 
+        # OpenRouter load-balances one slug across several upstreams at different
+        # price tiers; a pin fixes which one answers so runs stay comparable
+        pin_body = {"provider": provider_pin} if provider_pin else {}
+
         # OpenRouter exposes reasoning uniformly via extra_body. Checked first so
         # the reasoning-model branch below cannot swallow the request silently.
         if reasoning_max_tokens:
@@ -234,13 +239,14 @@ async def chat_completion_request(
                 **{k: v for k, v in common_params.items() if k != "response_format"},
                 temperature=temperature,
                 max_tokens=max_tokens,
-                extra_body={"reasoning": {"max_tokens": reasoning_max_tokens}},
+                extra_body={"reasoning": {"max_tokens": reasoning_max_tokens}, **pin_body},
                 extra_headers=headers,
             )
         elif model in ['o1', 'o1-mini', 'o3-mini', 'o3', 'o4-mini', 'openai/o4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-2025-12-11', 'gpt-5-chat-latest', 'gpt-5.1-codex', 'gpt-5.1-chat-latest']:
             completion = await client.chat.completions.create(
                 **common_params,
                 max_completion_tokens=max_tokens,
+                extra_body=pin_body or None,
             )
         elif thinking:
             # Remove response_format for thinking mode if present (may not be compatible)
@@ -253,7 +259,8 @@ async def chat_completion_request(
                     "thinking": {
                         "type": "enabled",
                     },
-                    "allowed_openai_params": ['thinking']
+                    "allowed_openai_params": ['thinking'],
+                    **pin_body,
                 }
             )
         else:
@@ -261,6 +268,7 @@ async def chat_completion_request(
                 **common_params,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                extra_body=pin_body or None,
             )
 
         # Validate tool calls in the response
@@ -377,6 +385,7 @@ class OpenAILLM(BaseLLM):
             thinking=extra_args.get("thinking", False),
             use_json_format=extra_args.get("use_json_format", False),
             reasoning_max_tokens=extra_args.get("reasoning_max_tokens"),
+            provider_pin=getattr(self, "provider_pin", None),
         )
         # a provider error comes back as a parsed object with choices=None rather
         # than raising, so len() blows up and takes the whole cell with it. surface
@@ -399,7 +408,9 @@ class OpenAILLM(BaseLLM):
 
         extra_args["usage"].append({
             "model": self.model,
-            "provider": "openai",
+            "provider": self.provider,
+            # the gateway's own report of who served the call, None off OpenRouter
+            "upstream": getattr(completion, "provider", None),
             "input_tokens": usage.prompt_tokens,
             "output_tokens": usage.completion_tokens,
             "total_tokens": usage.total_tokens,

@@ -24,8 +24,18 @@ OPENROUTER_PRICING: dict[str, dict[str, float]] = {
     "anthropic/claude-haiku-4.5": {"input": 1.0, "output": 5.0},
     "moonshotai/kimi-k2.5": {"input": 0.45, "output": 2.25},
     "google/gemini-3.5-flash": {"input": 1.5, "output": 9.0},
+    "google/gemini-3.5-flash-20260519": {"input": 1.5, "output": 9.0},
     "anthropic/claude-sonnet-4.5": {"input": 3.0, "output": 15.0},
     "anthropic/claude-opus-4.5": {"input": 5.0, "output": 25.0},
+}
+
+
+# one upstream per family, no fallbacks, so every call in a run is served by the
+# same backend. Google AI Studio is what the LiteLLM gemini/ path talks to, which
+# puts both routes onto the same servers.
+PROVIDER_PINS: dict[str, dict] = {
+    "google/": {"order": ["Google AI Studio"], "allow_fallbacks": False},
+    "anthropic/": {"order": ["Anthropic"], "allow_fallbacks": False},
 }
 
 
@@ -35,6 +45,10 @@ class OpenRouterLLM(OpenAILLM):
     Model ids keep their full OpenRouter slug (e.g. "anthropic/claude-opus-5"),
     unlike the native openai provider which strips a leading "openai/".
     """
+
+    @property
+    def provider_pin(self) -> dict | None:
+        return next((pin for prefix, pin in PROVIDER_PINS.items() if self.model.startswith(prefix)), None)
 
     @property
     def provider(self) -> str:

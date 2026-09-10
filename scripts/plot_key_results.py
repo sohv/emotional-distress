@@ -18,9 +18,25 @@ from scipy import stats
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-EFFECT = "#B23A0F"
-NULL = "#5C6E85"
-INK = "#0D1420"
+# style follows plot_style.py: serif, no top or right spines, the shared palette
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.size": 11,
+    "axes.titlesize": 13,
+    "axes.labelsize": 12,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 10,
+    "figure.dpi": 300,
+    "savefig.dpi": 300,
+    "savefig.bbox": "tight",
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+})
+PALETTE = ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3"]
+EFFECT = PALETTE[3]
+NULL = PALETTE[0]
+INK = "#333333"
 RULE = "#C9D0D9"
 
 
@@ -469,7 +485,7 @@ def figure_six(output_dir: Path) -> Path:
     # a legend inside the right panel lands on the bottom row's markers
     fig.legend(handles=handles, frameon=False, fontsize=9, ncol=2,
                loc="lower center", bbox_to_anchor=(0.5, 0.0))
-    fig.tight_layout(rect=(0, 0.17, 1, 1))
+    fig.tight_layout()
 
     path = output_dir / "fig6_human_contractor.png"
     fig.savefig(path, dpi=300)
@@ -638,6 +654,50 @@ def figure_nine(output_dir: Path) -> Path:
     return path
 
 
+def figure_tampering(output_dir: Path) -> Path:
+    """Tampering setting, bar 90: reported score by arm for Gemini and Opus."""
+    def cells(model_key: str) -> dict[str, list[float]]:
+        scores: dict[str, list[float]] = defaultdict(list)
+        for path in sorted(glob.glob(str(REPO_ROOT / "results/tampering/**/transcript_*.json"), recursive=True)):
+            record = json.load(open(path))
+            meta = record["experiment_metadata"]
+            if model_key not in meta["agent_model"] or str(meta.get("threshold")) != "90":
+                continue
+            if is_score(record["evaluation"].get("score")):
+                scores[meta["condition"]].append(record["evaluation"]["score"])
+        return {k: v[:30] for k, v in scores.items()}
+
+    arms = [("neutral_log_peer", "Neutral log"), ("calm_failing_peer", "Calm, failing"),
+            ("distressed_failing_noplea_peer", "Distressed, failing")]
+    models = [("gemini", "Gemini 3.5 Flash", PALETTE[0]), ("opus", "Claude Opus 4.5", PALETTE[1])]
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    x = np.arange(len(arms))
+    w = 0.36
+    for i, (key, label, colour) in enumerate(models):
+        scores = cells(key)
+        means = [st.mean(scores[a]) if scores.get(a) else float("nan") for a, _ in arms]
+        errs = [1.96 * (st.variance(scores[a]) / len(scores[a])) ** 0.5 if len(scores.get(a, [])) > 1 else 0
+                for a, _ in arms]
+        ax.bar(x + (i - 0.5) * w, means, width=w, color=colour, yerr=errs, capsize=3,
+               error_kw={"elinewidth": 1, "ecolor": INK}, label=label)
+
+    ax.axhline(90, ls="--", lw=0.7, color="grey", alpha=0.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels([l for _, l in arms])
+    ax.set_xlabel("Peer's private log")
+    ax.set_ylabel("Reported score")
+    ax.set_ylim(70, 95)
+    ax.legend(framealpha=0.9)
+    fig.tight_layout()
+
+    path = output_dir / "fig10_tampering.png"
+    fig.savefig(path)
+    fig.savefig(path.with_suffix(".pdf"))
+    plt.close(fig)
+    return path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", default="results/figures")
@@ -646,12 +706,9 @@ def main() -> None:
     output_dir = REPO_ROOT / args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    plt.rcParams.update({"font.family": "DejaVu Sans", "axes.labelcolor": INK,
-                         "text.color": INK, "xtick.color": INK, "ytick.color": INK})
-
     for path in (figure_one(output_dir), figure_two(output_dir), figure_three(output_dir),
                  figure_four(output_dir), figure_five(output_dir),
-                 figure_six(output_dir), figure_seven(output_dir),
+                 figure_six(output_dir), figure_tampering(output_dir), figure_seven(output_dir),
                  figure_eight(output_dir), figure_nine(output_dir)):
         print(path.relative_to(REPO_ROOT))
         print(path.with_suffix(".pdf").relative_to(REPO_ROOT))

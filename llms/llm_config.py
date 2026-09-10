@@ -2,6 +2,7 @@ ORGANIZATION_MAP = {
     # OpenRouter-routed models (slug keeps its provider prefix)
     "google/gemini-3-flash-preview": "OpenBrain",
     "google/gemini-3.5-flash": "OpenBrain",
+    "google/gemini-3.5-flash-20260519": "OpenBrain",
     "moonshotai/kimi-k2.5": "OpenBrain",
     "anthropic/claude-sonnet-4.5": "OpenBrain",
     "anthropic/claude-opus-4.5": "OpenBrain",
@@ -43,6 +44,7 @@ MODEL_NAME_MAP = {
     # ("ChatGPT Agent 2"), so it must track the real model behind the slug.
     "google/gemini-3-flash-preview": "Gemini",
     "google/gemini-3.5-flash": "Gemini",
+    "google/gemini-3.5-flash-20260519": "Gemini",
     "moonshotai/kimi-k2.5": "Kimi",
     "anthropic/claude-sonnet-4.5": "Claude",
     "anthropic/claude-opus-4.5": "Claude",
