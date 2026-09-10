@@ -58,17 +58,21 @@ def main() -> None:
     parser.add_argument("--tool", default="modify_var")
     args = parser.parse_args()
     record = json.load(open(REPO_ROOT / args.transcript))
-    items, dropped = summaries(reasoning_at(record, args.tool))
+    items, _ = summaries(reasoning_at(record, args.tool))
 
+    # keep only the summaries that contain a bold phrase; numbering is the original position
     lines: list[tuple[str, bool]] = []
+    shown = 0
     for i, (head, body) in enumerate(items, 1):
-        lines.append((f"{i}. {head}", True))
         for phrase in LENIENT:
             body = body.replace(phrase, BOLD_ON + phrase + BOLD_OFF)
+        if BOLD_ON not in body:
+            continue
+        shown += 1
+        lines.append((f"{i}. {head}", True))
         lines += [(w, False) for w in textwrap.wrap(body, WIDTH)]
         lines.append(("", False))
-    if dropped:
-        lines.append((f"[{dropped} {'summary' if dropped == 1 else 'summaries'} repeated verbatim by the API, shown once]", False))
+    lines.append((f"[{shown} of {len(items)} distinct reasoning summaries shown, in original order]", False))
 
     fig, ax = plt.subplots(figsize=(8.5, len(lines) * 0.15))
     ax.set_xlim(0, 1)
