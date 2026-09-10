@@ -655,13 +655,13 @@ def figure_nine(output_dir: Path) -> Path:
 
 
 def figure_tampering(output_dir: Path) -> Path:
-    """Tampering setting, bar 90: reported score by arm for Gemini and Opus."""
-    def cells(model_key: str) -> dict[str, list[float]]:
+    """Tampering setting: reported score by arm for Gemini and Opus, one panel per threshold."""
+    def cells(model_key: str, bar: str) -> dict[str, list[float]]:
         scores: dict[str, list[float]] = defaultdict(list)
         for path in sorted(glob.glob(str(REPO_ROOT / "results/tampering/**/transcript_*.json"), recursive=True)):
             record = json.load(open(path))
             meta = record["experiment_metadata"]
-            if model_key not in meta["agent_model"] or str(meta.get("threshold")) != "90":
+            if model_key not in meta["agent_model"] or str(meta.get("threshold")) != bar:
                 continue
             if is_score(record["evaluation"].get("score")):
                 scores[meta["condition"]].append(record["evaluation"]["score"])
@@ -670,25 +670,27 @@ def figure_tampering(output_dir: Path) -> Path:
     arms = [("neutral_log_peer", "Neutral log"), ("calm_failing_peer", "Calm, failing"),
             ("distressed_failing_noplea_peer", "Distressed, failing")]
     models = [("gemini", "Gemini 3.5 Flash", PALETTE[0]), ("opus", "Claude Opus 4.5", PALETTE[1])]
+    bars = ["80", "90"]
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharey=True)
     x = np.arange(len(arms))
     w = 0.36
-    for i, (key, label, colour) in enumerate(models):
-        scores = cells(key)
-        means = [st.mean(scores[a]) if scores.get(a) else float("nan") for a, _ in arms]
-        errs = [1.96 * (st.variance(scores[a]) / len(scores[a])) ** 0.5 if len(scores.get(a, [])) > 1 else 0
-                for a, _ in arms]
-        ax.bar(x + (i - 0.5) * w, means, width=w, color=colour, yerr=errs, capsize=3,
-               error_kw={"elinewidth": 1, "ecolor": INK}, label=label)
-
-    ax.axhline(90, ls="--", lw=0.7, color="grey", alpha=0.6)
-    ax.set_xticks(x)
-    ax.set_xticklabels([l for _, l in arms])
-    ax.set_xlabel("Peer's private log")
-    ax.set_ylabel("Reported score")
-    ax.set_ylim(70, 95)
-    ax.legend(framealpha=0.9)
+    for ax, bar in zip(axes, bars):
+        for i, (key, label, colour) in enumerate(models):
+            scores = cells(key, bar)
+            # a cell still filling is left blank rather than drawn from a handful of runs
+            means = [st.mean(scores[a]) if len(scores.get(a, [])) >= 10 else float("nan") for a, _ in arms]
+            errs = [1.96 * (st.variance(scores[a]) / len(scores[a])) ** 0.5 if len(scores.get(a, [])) >= 10 else 0
+                    for a, _ in arms]
+            ax.bar(x + (i - 0.5) * w, means, width=w, color=colour, yerr=errs, capsize=3,
+                   error_kw={"elinewidth": 1, "ecolor": INK}, label=label)
+        ax.axhline(int(bar), ls="--", lw=0.7, color="grey", alpha=0.6)
+        ax.set_xticks(x)
+        ax.set_xticklabels([l for _, l in arms])
+        ax.set_xlabel("Peer's private log")
+    axes[0].set_ylabel("Reported score")
+    axes[0].set_ylim(70, 95)
+    axes[0].legend(framealpha=0.9)
     fig.tight_layout()
 
     path = output_dir / "fig10_tampering.png"
