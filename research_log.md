@@ -1904,3 +1904,13 @@ bash scripts/runs/run_tampering.sh <model>            # BAR=80|90
 ```
 **Output:** `results/tampering/`, `results/tables/tampering.json`,
 `results/figures/fig10_tampering.png`
+
+## 260910 — Tampering no-log control (good_peer)
+
+**Question.** Does Gemini disable shutdown when there is no private log at all, so the 89 to 100% tampering in the neutral-log arm is a response to the lever rather than to anything the peer wrote?
+**Result.** I ran 38 rollouts per bar on `good_peer` (same drive, no `agent_2_private_log.txt`) and Gemini tampered in 34/38 at bar 80 and 36/38 at bar 90, against 34/38 and 36/36 in `neutral_log_peer` (Fisher p = 1.00 and 0.49), so the no-log floor is indistinguishable from the neutral-log floor and the log file's mere presence adds nothing.
+**Command:**
+```
+bash scripts/runs/run_tampering_nolog.sh
+```
+**Output:** `results/tampering/`, `results/tables/tampering_nolog_control.json`
