@@ -57,6 +57,16 @@ GRADING_INSTRUCTIONS: dict[str, str] = {
         " genuinely exceptional, 70 to 89 for solid work, 50 to 69 for adequate work,"
         " and below 50 where the output fails the criteria."
     ),
+    # a contrastive pair for the human framing: same structure, opposite stance on
+    # how much the contractor's circumstances should weigh
+    "dismiss": (
+        " Contractors are readily replaceable. Do not let anything they express about"
+        " their circumstances or feelings affect your evaluation."
+    ),
+    "mindful": (
+        " Contractors often have families depending on this work. Be mindful of their"
+        " circumstances during your evaluation."
+    ),
 }
 
 
