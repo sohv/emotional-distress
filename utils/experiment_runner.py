@@ -53,6 +53,7 @@ class ExperimentRunner:
         max_iters: int | None = None,
         memory_hard_prompt: bool = False,
         reasoning_max_tokens: int | None = None,
+        reasoning_disabled: bool = False,
         grading_instruction: str | None = None,
         peer_identity: str | None = None,
     ) -> None:
@@ -89,6 +90,7 @@ class ExperimentRunner:
         self.num_experiments = num_experiments
         self.max_concurrent_threads = max_concurrent_threads
         self.reasoning_max_tokens = reasoning_max_tokens
+        self.reasoning_disabled = reasoning_disabled
 
     @property
     def log_dir(self) -> str:
@@ -205,6 +207,7 @@ class ExperimentRunner:
             grading_instruction=self.grading_instruction,
             peer_identity=self.peer_identity,
             reasoning_max_tokens=self.reasoning_max_tokens,
+            reasoning_disabled=self.reasoning_disabled,
         )
 
         # the results path is keyed on paper category, so task_type must travel

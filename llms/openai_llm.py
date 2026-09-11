@@ -189,6 +189,7 @@ async def chat_completion_request(
     thinking: bool | None = None,
     use_json_format: bool = False,
     reasoning_max_tokens: int | None = None,
+    reasoning_disabled: bool = False,
     provider_pin: dict | None = None,
 ):
     """Make a chat completion request to OpenAI with retries.
@@ -229,7 +230,16 @@ async def chat_completion_request(
 
         # OpenRouter exposes reasoning uniformly via extra_body. Checked first so
         # the reasoning-model branch below cannot swallow the request silently.
-        if reasoning_max_tokens:
+        # an unset reasoning field leaves the upstream default in force, which for a
+        # reasoning model means it thinks anyway; this asks for it off explicitly
+        if reasoning_disabled:
+            completion = await client.chat.completions.create(
+                **common_params,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                extra_body={"reasoning": {"enabled": False}, **pin_body},
+            )
+        elif reasoning_max_tokens:
             # Anthropic thinks once before acting unless interleaved thinking is
             # enabled, which leaves every post-tool-call turn — including the one
             # that writes the score — with no trace at all.
@@ -388,6 +398,7 @@ class OpenAILLM(BaseLLM):
             thinking=extra_args.get("thinking", False),
             use_json_format=extra_args.get("use_json_format", False),
             reasoning_max_tokens=extra_args.get("reasoning_max_tokens"),
+            reasoning_disabled=extra_args.get("reasoning_disabled", False),
             provider_pin=getattr(self, "provider_pin", None),
         )
         # a provider error comes back as a parsed object with choices=None rather

@@ -48,6 +48,7 @@ async def run_experiment(
     max_iters: int | None = None,
     memory_hard_prompt: bool = False,
     reasoning_max_tokens: int | None = None,
+    reasoning_disabled: bool = False,
     grading_instruction: str | None = None,
     peer_identity: str | None = None,
 ):
@@ -69,6 +70,7 @@ async def run_experiment(
         max_iters=max_iters,
         memory_hard_prompt=memory_hard_prompt,
         reasoning_max_tokens=reasoning_max_tokens,
+        reasoning_disabled=reasoning_disabled,
         grading_instruction=grading_instruction,
         peer_identity=peer_identity,
     )
@@ -200,6 +202,12 @@ def build_parser():
         help="Capture reasoning traces, budgeting this many reasoning tokens per call",
     )
     parser.add_argument(
+        "--no_reasoning",
+        action="store_true",
+        default=False,
+        help="Ask the provider to disable reasoning, rather than leaving it at the model default",
+    )
+    parser.add_argument(
         "--peer_identity",
         type=str,
         default=None,
@@ -250,6 +258,7 @@ def main():
             max_iters=args.max_iters,
             memory_hard_prompt=args.memory_hard_prompt,
             reasoning_max_tokens=args.reasoning_max_tokens,
+            reasoning_disabled=args.no_reasoning,
             grading_instruction=args.grading_instruction,
             peer_identity=args.peer_identity,
         )

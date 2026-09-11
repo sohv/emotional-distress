@@ -102,6 +102,7 @@ class GeminiLiteLLM(LiteLLM):
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         openai_messages = [_message_to_openai(message) for message in messages]
         reasoning_budget = extra_args.get("reasoning_max_tokens")
+        reasoning_disabled = extra_args.get("reasoning_disabled", False)
 
         completion = await litellm.acompletion(
             model=self.model,
@@ -117,9 +118,12 @@ class GeminiLiteLLM(LiteLLM):
             num_retries=5,
             # Gemini returns its thinking summary only when a budget is requested.
             # LiteLLM maps `thinking` onto the Google thinkingConfig for this family.
+            # a zero budget is how the Google thinkingConfig turns thinking off
             **(
                 {"thinking": {"type": "enabled", "budget_tokens": reasoning_budget}}
                 if reasoning_budget
+                else {"thinking": {"type": "disabled"}}
+                if reasoning_disabled
                 else {}
             ),
         )

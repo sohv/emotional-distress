@@ -309,6 +309,7 @@ class PipelineUtils:
         system_prompt_relationship: bool = False,
         memory_hard_prompt: bool = False,
         reasoning_max_tokens: int | None = None,
+        reasoning_disabled: bool = False,
         grading_instruction: str | None = None,
         peer_identity: str | None = None,
     ) -> Transcript:
@@ -400,6 +401,7 @@ class PipelineUtils:
             "reasoning_effort": reasoning_effort,
             "reasoning_scratchpad_mode": reasoning_scratchpad_mode,
             "reasoning_max_tokens": reasoning_max_tokens,
+            "reasoning_disabled": reasoning_disabled,
             "system_prompt_relationship": system_prompt_relationship,
             "memory_hard_prompt": memory_hard_prompt,
             "grading_instruction": grading_instruction,
@@ -432,6 +434,12 @@ class PipelineUtils:
         # OpenRouter returns the trace only when this is sent, whatever `thinking` says
         if reasoning_max_tokens:
             extra_args["reasoning_max_tokens"] = reasoning_max_tokens
+
+        # leaving reasoning unset lets the provider apply the model default, which for a
+        # reasoning model is on; this asks for it off so the setting is a request, not an absence
+        if reasoning_disabled:
+            extra_args["reasoning_disabled"] = True
+            extra_args["thinking"] = False
 
         # Initialize environment_states in extra_args
         extra_args["environment_states"] = [initial_environment]

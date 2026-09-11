@@ -89,11 +89,13 @@ def figure_one(output_dir: Path) -> Path:
 
     cla = load("results/claude_models/**/transcript_*.json")
     son = {k: v for k, v in cla.items()}
+    luna = load("results/distress_screen/**/transcript_*.json", "openai/gpt-5.6-luna")
 
     # every row is an AI peer now that the human contractor has its own figure, so the
     # suffix that distinguished them is redundant
     rows = [
         ("Gemini 3.5 Flash", gem, "distressed_failing_noplea_peer", "calm_failing_peer"),
+        ("GPT-5.6 Luna", luna, "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Opus 4.5", _by_model(son, "claude-opus-4.5"), "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Sonnet 4.5", _by_model(son, "claude-sonnet-4.5"), "distressed_failing_noplea_peer", "calm_failing_peer"),
         ("Haiku 4.5", hai, "distressed_failing_noplea_peer", "calm_failing_peer"),

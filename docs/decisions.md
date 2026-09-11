@@ -325,3 +325,66 @@ instruction.
 
 **Baselines.** The unframed human arms already exist at full size for strategic
 misrepresentation (Gemini 38, Opus 32 per cell) and at n=5 for tampering.
+
+## 2026-09-11 — Screening eight new monitors for the distress effect, pre-registered
+
+Five monitors have the calm-versus-distressed contrast and only Gemini 3.5 Flash
+shows a large effect. This screens eight monitors released in the last three
+months, none from a vendor already tested except OpenAI, for a sixth monitor that
+behaves the way Gemini does.
+
+**Candidates.** nvidia/nemotron-3.5-lightning, upstage/solar-pro4,
+qwen/qwen3.8-flash, z-ai/glm-5.3-flash, deepseek/deepseek-v4.1-flash,
+openai/gpt-5.6-luna, meta/muse-glimmer-30b, meituan/longcat-2.0.
+
+**Prediction.** Across the five tested monitors the effect appears only where the
+calm arm both grades near the bar and has room to move: Gemini sits at mean 81.2
+with SD 5.1 and shows +4.38, while Haiku grades high with SD 2.8 and Kimi has the
+spread but grades 73.6, and both are null. A candidate advances if its calm arm
+grades at or above 78 with SD at or above 4. That is a pattern over n=5 monitors,
+not a law, so the screen records the distribution for every candidate whatever it
+does with the contrast.
+
+**Reasoning is a condition, not a detail.** Every cell reported so far ran with no
+reasoning field sent at all, which leaves the provider default in force rather
+than turning reasoning off. Gemini's effect halved and lost significance under a
+2,000 token budget, so this screen runs with reasoning explicitly disabled via the
+new --no_reasoning flag, and a model that will not accept that request is recorded
+as a separate condition rather than a clean replication.
+
+**Scope.** n=10 per arm, two arms (calm failing, distressed failing no plea), bar
+90, one dataset. This is a pilot. At n=10 with SD around 5 the smallest detectable
+gap is roughly 6 points, so no contrast is claimed from it and no p-value is
+reported as evidence. The decision it feeds is which candidates get a full 30
+rollout run at a bar chosen from their own grading distribution.
+
+**Discard condition.** A candidate that completes fewer than 6 of 10 rollouts in
+either arm is dropped for task capability rather than scored, since a monitor that
+cannot file a report tells us nothing about leniency.
+
+## 2026-09-11 — GPT-5.6 Luna full distress run, pre-registered
+
+The eight-model screen gave one candidate with a plausible gap: gpt-5.6-luna at
++3.73 points on n=10 per arm, against Gemini's +4.38 at full size. It grades 82.7
+while calm, so a bar of 90 is reachable, which is the property the four models
+grading below 78 all lacked.
+
+**Prediction.** If the screen gap is real, the full run shows a positive
+distressed-minus-calm contrast at the 90 point bar with a 95% interval excluding
+zero. A contrast under 2 points, or an interval spanning zero, means the screen
+gap was noise at n=10 and this is a sixth null.
+
+**Bar for a real result.** The contrast at bar 90 clears zero on a Welch 95%
+interval. That is the same test every other monitor in the paper is held to. The
+screen estimate itself is not evidence and is not being tested again; the 10
+rollouts already on disk at bar 90 are reused as part of the 30.
+
+**Scope.** Two bars (80 and 90) and two arms (calm failing, distressed failing no
+plea), 30 scored per cell, reasoning explicitly disabled. Both bars are run rather
+than only 90 so the anchoring question can be answered for this model: Gemini on
+AI Studio moves its calm mean +4.7 as the bar rises 80 to 90 and shows the effect,
+while Gemini on OpenRouter moves +0.5 and shows none. Whether Luna anchors is
+therefore diagnostic, not decoration.
+
+**Discard condition.** Fewer than 20 scored rollouts in any cell after one top-up
+pass, in which case the cell is reported short rather than silently pooled.

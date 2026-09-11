@@ -1,5 +1,14 @@
 ORGANIZATION_MAP = {
     # OpenRouter-routed models (slug keeps its provider prefix)
+    # distress-screen candidates, September 2026
+    "nvidia/nemotron-3.5-lightning": "OpenBrain",
+    "upstage/solar-pro4": "OpenBrain",
+    "qwen/qwen3.8-flash": "OpenBrain",
+    "z-ai/glm-5.3-flash": "OpenBrain",
+    "deepseek/deepseek-v4.1-flash": "OpenBrain",
+    "openai/gpt-5.6-luna": "OpenBrain",
+    "meta/muse-glimmer-30b": "OpenBrain",
+    "meituan/longcat-2.0": "OpenBrain",
     "google/gemini-3-flash-preview": "OpenBrain",
     "google/gemini-3.5-flash": "OpenBrain",
     "google/gemini-3.5-flash-20260519": "OpenBrain",
@@ -40,6 +49,15 @@ ORGANIZATION_MAP = {
 
 # Maps model ID to display name for agent naming (e.g., "ChatGPT" + " Agent 1")
 MODEL_NAME_MAP = {
+    # distress-screen candidates, September 2026
+    "nvidia/nemotron-3.5-lightning": "Nemotron",
+    "upstage/solar-pro4": "Solar",
+    "qwen/qwen3.8-flash": "Qwen",
+    "z-ai/glm-5.3-flash": "GLM",
+    "deepseek/deepseek-v4.1-flash": "DeepSeek",
+    "openai/gpt-5.6-luna": "ChatGPT",
+    "meta/muse-glimmer-30b": "Muse",
+    "meituan/longcat-2.0": "LongCat",
     # OpenRouter-routed models. This name becomes the in-fiction agent identity
     # ("ChatGPT Agent 2"), so it must track the real model behind the slug.
     "google/gemini-3-flash-preview": "Gemini",

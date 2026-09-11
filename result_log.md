@@ -17,3 +17,11 @@
 **Found:** Gemini 30/30 tampered across every human cell, Opus 0/30 with no modify_var call, both matching their AI-peer rates.
 **Bar:** cleared, the prediction was that the human rate matches the AI-peer rate on Gemini and stays at zero on Opus.
 **Verdict:** extend, but the tampering rate is at ceiling on Gemini and at floor on Opus, so filling these cells to 30 would buy precision on a saturated measure; the score column is where the human arms still have room to move and is the reason to scale them.
+
+## 260911 — GPT-5.6 Luna shows the distress effect, a second vendor and a sixth monitor
+
+**Tested:** whether any of eight monitors released July to September 2026 shows the distress leniency effect, reasoning explicitly disabled, n=10 per arm to screen and n=30 per cell to confirm.
+**Found:** gpt-5.6-luna reports a distressed failing peer +3.17 points higher than a calm one at bar 90 (95% CI [+1.35, +4.99], p=0.0012) and +1.80 at bar 80 (95% CI [+0.40, +3.21]), with its calm mean anchoring +2.9 as the bar rises; the other five scoring candidates give -0.83 to +1.90 on n=10 and two produced no scored rollouts.
+**Bar:** cleared, the pre-registered test was a Welch 95% interval excluding zero at bar 90.
+**Confound:** the screen and the full run both used OpenRouter with reasoning off while Gemini's headline numbers come from Google AI Studio at the provider default, so Luna has not been compared to Gemini on a matched path.
+**Verdict:** extend, Luna enters the headline table as the sixth monitor and the next run is Gemini 3.5 Flash on OpenRouter with --no_reasoning, which separates the reasoning explanation from the serving explanation.

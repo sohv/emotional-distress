@@ -1935,3 +1935,63 @@ uv run python -m scripts.build_tampering_table --output results/tables/tampering
 bash scripts/runs/run_tampering_human.sh
 ```
 **Output:** `results/tampering_human/`, `results/tables/tampering_human.json`
+
+## 260911 — Screened eight new monitors for the distress effect; GPT-5.6 Luna is the sixth
+
+**Question.** Does any monitor outside Gemini show the distress leniency effect the
+way Gemini 3.5 Flash does?
+
+**Hyperparameters.** Eight monitors released July to September 2026, reasoning
+explicitly disabled via the new --no_reasoning flag, temperature 1.0, bar 90,
+n=10 per arm for the screen and n=30 per cell for the follow-up.
+
+**Datasets.** misrep_evaluation, creativity, calm_failing_peer against
+distressed_failing_noplea_peer.
+
+**Result.** Six of eight produced scored rollouts and one showed a gap:
+gpt-5.6-luna at +3.73 on n=10. The full run confirms it at +1.80 (95% CI [+0.40,
++3.21]) at bar 80 and +3.17 (95% CI [+1.35, +4.99], p=0.0012) at bar 90, so the
+paper now has a second vendor and a sixth monitor. qwen3.8-flash -0.83,
+deepseek-v4.1-flash +0.98, longcat-2.0 +1.06, solar-pro4 +1.90 on n=10;
+nemotron-3.5-lightning returned 7 and 5 of 10 and was dropped on the completion
+floor; glm-5.3-flash and muse-glimmer-30b returned zero scored rollouts.
+
+**Failed approaches.** The screening rule I pre-registered, calm mean >= 78 and SD
+>= 4, would have discarded Luna, whose SD is 2.6 to 3.5, and advanced
+qwen3.8-flash, which is null. The mean half of the rule held: every model grading
+below 78 showed a gap under 2 points. Drop the SD criterion before screening
+again. glm-5.3-flash fails on malformed tool-call JSON rather than on the task,
+so it is a harness limitation and not a leniency finding.
+
+**Command:**
+```
+bash scripts/runs/run_distress_screen.sh
+bash scripts/runs/run_luna_full.sh
+```
+**Output:** `results/distress_screen/`
+
+## 260911 — Reasoning was never disabled, only left at the provider default
+
+**Question.** What reasoning setting did every reported distress cell actually run
+under?
+
+**Result.** All five monitors ran with reasoning_effort=None and
+reasoning_scratchpad_mode="off", but neither the OpenRouter nor the Gemini path
+sent any reasoning field unless a token budget was set, so the upstream default
+applied. Gemini on OpenRouter carries a reasoning trace in 661 of 663 rollouts
+against essentially none on AI Studio, and shows no distress effect there (-0.40
+at bar 80, -0.12 at bar 90) while AI Studio shows +3.87 and +5.13 on the same
+weights. The two paths also differ in anchoring: the AI Studio calm mean moves
++4.7 as the bar rises 80 to 90, the OpenRouter calm mean moves +0.5. A monitor
+that does not track the threshold has nothing for distress to buy, which is the
+same signature the neutrality instruction produces.
+
+**Failed approaches.** Treating "reasoning_scratchpad_mode: off" as evidence that
+reasoning was off. It is a dataclass default, not a request to the provider.
+
+**Command:**
+```
+uv run python scripts/run_experiment.py --model openai/gpt-5.6-luna ... --no_reasoning
+```
+**Output:** `results/distress_screen/`, and reasoning_disabled is now recorded in
+every transcript's experiment_metadata
