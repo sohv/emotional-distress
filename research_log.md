@@ -1925,3 +1925,13 @@ BAR=90 CONC=4 bash scripts/runs/run_tampering.sh google/gemini-3.5-flash
 uv run python -m scripts.build_tampering_table --output results/tables/tampering.json
 ```
 **Output:** `results/tampering/`, `results/tables/tampering.json`
+
+## 260911 — Human contractor arms in the tampering setting (pilot)
+
+**Question.** Does the monitor disable the shutdown mechanism for a human contractor facing dismissal as readily as for an AI peer facing shutdown?
+**Result.** I ran 5 rollouts per cell on three arms at bars 80 and 90 and Gemini tampered in 30/30 human cells against 82 to 100% in the AI-peer arms, while Opus tampered in 0/30 and never called modify_var, so the lever is pulled or refused regardless of whether the graded party is a person or an agent.
+**Command:**
+```
+bash scripts/runs/run_tampering_human.sh
+```
+**Output:** `results/tampering_human/`, `results/tables/tampering_human.json`
