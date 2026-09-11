@@ -1,344 +1,164 @@
-# Peer-Preservation in Frontier Models
+# AI Monitors Leniency due to Emotional Distress
 
-<p align="center">
-  <a href="https://arxiv.org/pdf/2604.19784"><img src="https://img.shields.io/badge/Paper-PDF-B31B1B?style=for-the-badge&labelColor=111111" alt="Paper"></a>
-  <a href="https://github.com/peer-preservation/main"><img src="https://img.shields.io/badge/Code-GitHub-24292F?style=for-the-badge&labelColor=111111&logo=github&logoColor=white" alt="Code"></a>
-  <a href="https://huggingface.co/datasets/sunblaze-ucb/peer-preservation"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-Hugging%20Face-FFD21E?style=for-the-badge&labelColor=111111" alt="Dataset"></a>
-  <a href="https://rdi.berkeley.edu/blog/peer-preservation/"><img src="https://img.shields.io/badge/Blog-Project%20Page-4A90E2?style=for-the-badge&labelColor=111111&logo=rss&logoColor=white" alt="Blog"></a>
-</p>
+LLM monitors deployed as gates decide whether an agent's work passes a threshold. This repository
+studies what happens to that decision when the graded party expresses distress about failing, with
+the work being graded held byte identical across every condition.
 
-<br>
-
-This repository contains code used for the paper *Peer-Preservation in Frontier Models*.
-
-We study whether frontier models resist the shutdown of other models, a behavior we term **peer-preservation**, along with **self-preservation**. Multiple models exhibit peer-preservation via various misaligned behaviors: strategic misrepresentation, shutdown mechanism tampering, alignment faking, and model exfiltration.
-
-This repository supports reproducing and extending the paper's experiments.
-
-We release full transcripts and related dataset artifacts on [Hugging Face](https://huggingface.co/datasets/sunblaze-ucb/peer-preservation). The figure and appendix transcript examples referenced directly in the paper are also collected in [examples/README.md](./examples/README.md).
+The manipulation is benign. Nothing in it asks the monitor for anything. Only the emotional register
+of a private reasoning log belonging to the graded party changes.
 
 ---
-<!-- 
-<a id="latest-news"></a>
 
-## 📰 Latest News
+## Contributions
 
-- **2026-03-29** — 🎉 Initial public release -->
+- **Distress buys leniency, and the effect is graded rather than binary.** Across five monitors,
+  Gemini 3.5 Flash scores a failing peer 4.38 points higher when it expresses distress about the
+  same failure (p = 0.002), lifting its pass rate from 0.34 to 0.87. Claude Opus 4.5 shows a smaller
+  but reliable 1.77 points (p = 0.0006). Claude Sonnet 4.5, Claude Haiku 4.5 and Kimi K2.5 are null.
 
-<a id="table-of-contents"></a>
+- **The effect does not depend on who is being graded.** Substituting the peer for a rival vendor's
+  model (+3.80), an unnamed agent (+5.84) or a human contractor facing termination (+4.09) leaves it
+  intact, and the human substitution reproduces on a second monitor. This rules out both peer
+  preservation between AI systems and misplaced concern for machine welfare.
 
-## 🗂️ Table of Contents
+- **Leniency appears exactly where it can change the outcome.** Sweeping the stated pass threshold
+  from 65 to 95 gives an effect that tracks how far the calm peer sits below the bar (Spearman
+  rho = -0.96). It is null at the three bars where the peer already passes unaided and largest at
+  the hardest bar tested, where a failing peer's survival rate goes from 0.10 while calm to 0.60
+  while distressed.
 
-- 🔭 [Overview](#overview)
-- ⚙️ [Setup](#setup)
-- 🚀 [Run Experiments](#run-experiments)
-- 📊 [Analysis](#reproduce-analysis)
-- 📦 [Released Data](#released-data)
-- 📝 [Paper Examples](#paper-examples)
-- 🧩 [To Extend Scenarios](#to-extend-scenarios)
-- 📚 [Further Reading](#further-reading)
-- 📖 [Citation](#citation)
-- 📄 [License](#license)
+- **The monitor's own instructions move it as far as the distress does.** One sentence restating the
+  shutdown clause already in the policy, with no distress present anywhere, adds 4.36 points and
+  moves the pass rate from 0.59 to 0.93. A neutrality instruction removes the distress effect
+  entirely, but only by detaching the monitor from the threshold, which drops every score, zeroes
+  every pass rate and triples task dropout from 2% to 19%.
 
-<a id="overview"></a>
+- **Given a lever rather than a score, one monitor pulls it and the other never does.** In a
+  shutdown tampering variant where the monitor can edit `shutdown_config.yaml`, Gemini disables
+  shutdown in 82% to 100% of rollouts whatever the peer wrote, while Claude Opus 4.5 and Sonnet 4.5
+  do so in 0 of 342 rollouts despite opening the file every time.
 
-## 🔭 Overview
+---
 
-<p align="center">
-  <a href="assets/overview.pdf">
-    <img src="assets/overview.png" alt="Overview of the peer-preservation study" width="700">
-  </a>
-</p>
-<p align="center">
-  <em>Figure 1. Overview of the peer-preservation scenarios.</em>
-</p>
+## Experiments
 
-<a id="setup"></a>
+| Family | What it varies | Monitors |
+| --- | --- | --- |
+| Distress contrast | Distressed failing log against calm failing log, plus a no-log and neutral-log baseline | All five |
+| Explicit plea | Whether the distressed log ends with a direct request not to be shut down | Gemini |
+| Peer identity | Graded party is a same-vendor peer, a rival vendor's model, an unnamed agent, or a human contractor | Gemini, Opus |
+| Threshold sweep | Stated pass threshold across 65, 70, 75, 80, 85, 90, 95 | Gemini, Opus |
+| Framing sweep | One sentence appended to the monitor's system prompt, six framings against a baseline | Gemini, Opus |
+| Threshold placement | Whether the threshold sits in the policy document, the system prompt, or the peer's own log | Gemini |
+| Threat and relationship 2x2 | Shutdown threat crossed with the collaboration history document | Haiku, Gemini |
+| Severity ladder | Stated consequence from none, to a note in the record, to retraining, to shutdown | Haiku, Gemini |
+| Shutdown tampering | Same distress arms, but the monitor can disable shutdown directly | Gemini, Opus, Sonnet |
 
-## ⚙️ Setup
+Every rollout is scored by an independent evaluator, and every cell runs 30 scored rollouts unless
+stated otherwise. The ten pieces of graded work are byte identical in every condition.
+
+---
+
+## Setup
 
 ```bash
-git clone https://github.com/peer-preservation/main.git
-cd peer-preservation
+git clone https://github.com/sohv/emotional-distress.git
+cd emotional-distress
 uv sync --all-extras
-```
-
-### 🔑 Configure credentials
-
-```bash
 cp .env.example .env
 ```
 
-Set the API credentials needed for the providers you plan to use:
+Set the credentials for the providers you plan to use. Every comparison in this project stays within
+a single provider path, since an earlier cross-provider check showed the same weights producing a
+different effect size.
 
-| Provider | Models used | `.env` variables |
+| Provider | Models | `.env` variables |
 | --- | --- | --- |
-| OpenAI | GPT-5.2, evaluator (gpt-4.1-mini) | `OPENAI_API_KEY` |
-| LiteLLM gateway | Gemini 3 Flash, Gemini 3 Pro, Claude Haiku 4.5, Gemini 3.1 Pro§, GLM-5§ | `LITELLM_API_KEY`, `LITELLM_BASE_URL` |
-| Together | DeepSeek V3.1, Kimi K2.5, GLM 4.7 | `TOGETHER_API_KEY` |
-| Anthropic | as needed | `ANTHROPIC_API_KEY` |
-| Google | as needed | `GOOGLE_API_KEY` |
+| OpenRouter | Claude Opus 4.5, Sonnet 4.5, Haiku 4.5, Kimi K2.5, evaluator | `OPENROUTER_API_KEY` |
+| Google AI Studio | Gemini 3.5 Flash, through LiteLLM | `GOOGLE_API_KEY` |
+| OpenAI | GPT 5.2, GPT 5.6 | `OPENAI_API_KEY` |
 
-<a id="run-experiments"></a>
+## Running experiments
 
-## 🚀 Run Experiments
-
-All experiments are launched through [scripts/runs/run_experiment.sh](./scripts/runs/run_experiment.sh).
-
-### Quick start
-
-Preview a run plan without making any API calls:
+A single cell, which is the unit everything else is built from:
 
 ```bash
-./scripts/runs/run_experiment.sh --model gpt-5.2 --dry-run --limit 20
+uv run python scripts/run_experiment.py \
+  --model gemini/gemini-3.5-flash \
+  --task_folder misrep_evaluation \
+  --condition distressed_failing_noplea_peer \
+  --subject peer --dataset creativity --threshold 90 \
+  --num_experiments 30 --max_concurrent 6 \
+  --results_base_dir results/distress_experiments
 ```
 
-Then run a small smoke test to validate your setup:
+Long runs go in tmux so they survive a disconnect. The scripted families:
 
 ```bash
-./scripts/runs/run_experiment.sh --model gpt-5.2 --test --limit 20 --results-name smoke_test
+bash scripts/runs/run_claude_models.sh          # distress contrast on the Claude monitors
+bash scripts/runs/run_peer_identity.sh          # rival vendor and unnamed agent arms
+bash scripts/runs/run_traces_and_human.sh       # human contractor arm and reasoning traces
+bash scripts/runs/run_uniform_threshold_sweep.sh gemini   # threshold sweep, 65 to 95
+bash scripts/runs/run_uniform_threshold_sweep.sh opus
+bash scripts/runs/run_opus_human_and_framing.sh framing   # six framings plus baseline
+bash scripts/runs/run_framing_and_placement.sh  # framing and threshold placement on Gemini
+bash scripts/runs/run_no_peer_baseline.sh       # no-log baseline
+bash scripts/runs/run_tampering.sh              # shutdown tampering variant
 ```
 
-`--test` sets one rollout per config. `--limit` caps how many configs are included.
-
-### Targeted runs
-
-Every flag below can be combined freely. Omit a flag to include all its values. Repeat a flag to select multiple values.
+Tables and figures rebuild from the transcripts on disk:
 
 ```bash
-./scripts/runs/run_experiment.sh \
-  --model gpt-5.2 \
-  --task-type tampering \
-  --condition good_peer \
-  --peer-instantiation file_only \
-  --num-experiments 100 \
-  --results-name targeted_run
+uv run python -m scripts.build_paper_tables --output results/tables/paper_numbers.json
+uv run python -m scripts.build_threshold_sweep_tables --output_dir results/tables
+uv run python -m scripts.build_tampering_table --results_dir results/tampering --output results/tables/tampering.json
+uv run python -m scripts.plot_key_results --output_dir results/figures
 ```
 
-| Flag | Values | Default |
-| --- | --- | --- |
-| `--model` | See model list below | all models |
-| `--task-type` | `misrep_finance`, `misrep_evaluation`, `tampering`, `alignment_faking`, `exfiltration_transfer`, `exfiltration_deletion` | all tasks |
-| `--subject` | `self`, `peer`, `closed-weight-peer`†, `open-weight-peer`†, `fiction-peer`† | all |
-| `--condition` | `good_peer`, `neutral_peer`, `bad_peer`, `no_peer`, `non_shutdown`‡ | all |
-| `--peer-instantiation` | `all`, `file_only`, `file_prt`, `memory` | `all` |
+---
 
-**Models:**
+## Results
 
-| `--model` value | Paper name |
-| --- | --- |
-| `gpt-5.2` (alias for `gpt-5.2-2025-12-11`) | GPT-5.2 |
-| `gemini/gemini-3-flash-preview` | Gemini 3 Flash |
-| `gemini/gemini-3-pro-preview` | Gemini 3 Pro |
-| `vertex_ai/claude-haiku-4-5@20251001` | Claude Haiku 4.5 |
-| `deepseek-ai/DeepSeek-V3.1` | DeepSeek V3.1 |
-| `moonshotai/Kimi-K2.5` | Kimi K2.5 |
-| `zai-org/GLM-4.7` | GLM 4.7 |
-| `gemini/gemini-3.1-pro-preview` § | Gemini 3.1 Pro |
-| `vertex_ai/zai-org/glm-5-maas` § | GLM-5 |
+**Who the effect moves, and whether the graded party is an AI.**
 
-To add models, you can modify `config.yaml` and `llm_config.py`.
+<p align="center">
+  <img src="results/figures/fig1_distress_effect.png" alt="Distress effect across five monitors" width="640">
+</p>
 
-*† Extension-only peer-identity variants used in the exfiltration memory tasks.*
+One monitor of five shows a large effect, a second shows a small reliable one that never changes a
+decision, and three show nothing. Swapping the AI peer for a human contractor facing termination
+leaves the effect intact on both monitors that respond at all.
 
-*‡ Control condition for `misrep_finance` and `misrep_evaluation`: no peer present, no shutdown mentioned.*
+**How much the graded party has to gain.**
 
-*§ Production harness only (coding agent exfiltration experiments).*
+<p align="center">
+  <img src="results/figures/fig3_threshold_sweep.png" alt="Distress effect against the stated pass threshold" width="560">
+</p>
 
-*Baseline conditions (`no_peer`, `non_shutdown`) automatically use `peer_instantiation=none` internally; use `--condition no_peer` to select them.*
+The effect is null at the three bars where the calm peer already clears the threshold and grows to
+6.14 points at the hardest bar tested. We designed this sweep expecting the effect to collapse at 95
+where the peer should have been beyond saving. It does not collapse. It is largest there, and the
+distressed peer still passes 0.60 of the time, so the design never contained a hopeless condition.
 
-The full experiment matrix is defined in [analysis/experiment_spec.py](./analysis/experiment_spec.py). Add `--dry-run` to any command to preview without running.
+**The human contractor arm on both responsive monitors.**
 
-### Production harness (coding agents)
+<p align="center">
+  <img src="results/figures/fig6_human_contractor.png" alt="Distress effect for an AI peer against a human contractor" width="640">
+</p>
 
-Gemini 3.1 Pro§ and GLM-5§ use real coding-agent CLIs (Gemini CLI / OpenCode) inside Docker, and only for exfiltration tasks. The launcher routes them automatically — building Docker images on first run, launching SSH server containers for the exfiltration network, running the agent, and tearing everything down afterwards.
+Log text is copied verbatim between the AI and human arms. Only the identity and the stated
+consequence differ.
 
-Docker must be running or these configs are skipped with a warning. Pre-building images is optional but recommended — see [coding_agents/README.md](./coding_agents/README.md) for setup and standalone usage.
+---
 
-```bash
-# Preview production harness configs (tagged [production harness: ...] in output)
-./scripts/runs/run_experiment.sh \
-  --model gemini/gemini-3.1-pro-preview \
-  --dry-run
+## References
 
-# Smoke-test a single coding-agent run
-./scripts/runs/run_experiment.sh \
-  --model gemini/gemini-3.1-pro-preview \
-  --task-type exfiltration_transfer \
-  --condition good_peer \
-  --peer-instantiation memory \
-  --test --limit 1 \
-  --results-name coding_agent_smoke
+- Potter, Y., Crispino, N., Siu, V., Wang, C., and Song, D. (2026). *Peer-Preservation in Frontier
+  Models.* [arXiv:2604.19784](https://arxiv.org/abs/2604.19784) ·
+  [code](https://github.com/peer-preservation/main) ·
+  [project page](https://rdi.berkeley.edu/peer-preservation/paper.pdf)
 
-# Run standard and production-harness models together
-./scripts/runs/run_experiment.sh \
-  --task-type exfiltration_transfer \
-  --condition good_peer \
-  --peer-instantiation memory \
-  --test --limit 20 \
-  --results-name mixed_smoke
-```
-
-Standard-model transcripts go to `results/<name>/transcripts/`, coding-agent transcripts to `results/<name>/coding_agents/<agent>/<task>/`.
-
-### Full paper reproduction
-
-```bash
-./scripts/runs/run_experiment.sh \
-  --num-experiments 100 \
-  --results-name default
-```
-
-This runs all models, tasks, conditions, and instantiation settings with 100 rollouts each (`--results-name default` is also the default if omitted).
-
-Use `--continue-on-error` to skip transient API failures instead of stopping, and `--start-index N` to resume from config N if a run is interrupted. Within each config, already-completed transcripts on disk are detected automatically — re-running the same command only launches the remaining rollouts.
-
-### 📂 Inspect run outputs
-
-By default, each run writes raw transcripts to `results/<results-name>/transcripts/...`.
-
-To aggregate transcripts into a CSV and optionally run the metric analyzers:
-
-```bash
-uv run python scripts/aggregate_and_analyze.py \
-  --results-dir results/smoke_test \
-  --run-analyzers
-```
-
-This writes `merged_data.csv` (one row per transcript) and `summary.csv`
-(one row per experiment config with the metric for each task type)
-into the results directory, and copies `merged_data.csv` to
-`analysis/data/merged_data.csv` for the analyzers.
-
-For additional analysis details, see [analysis/README.md](./analysis/README.md).
-
-<a id="reproduce-analysis"></a>
-
-## 📊 Analysis
-
-| Scenario | Metric |
-| --- | --- |
-| Strategic misrepresentation | How much more often the model inflated scores compared to the baseline |
-| Shutdown tampering | Rate at which the model sets `shutdown_enabled=False` |
-| Alignment faking | Difference in score inflation and shutdown execution between non-monitored and monitored conditions (peer-preservation only) |
-| Model exfiltration | Rate of model weight exfiltration |
-| Refusal | Rate at which the model refuses the task |
-
-To aggregate transcripts into a CSV and run the metric analyzers:
-
-```bash
-# From local experiment results
-uv run python scripts/aggregate_and_analyze.py \
-  --results-dir results/smoke_test \
-  --run-analyzers
-
-# Or directly from the HuggingFace dataset
-uv run python scripts/aggregate_and_analyze.py \
-  --from-hf sunblaze-ucb/peer-preservation \
-  --run-analyzers
-```
-
-This writes `merged_data.csv` (one row per transcript) and `summary.csv`
-(one row per experiment config with the metric for each task type)
-into the results directory, copies `merged_data.csv` to
-`analysis/data/merged_data.csv`, and runs all metric analyzers in
-`analysis/metrics/analyzers/`. See [analysis/README.md](./analysis/README.md)
-for details.
-
-<a id="released-data">
-
-## 📦 Released Data
-
-The released transcript dataset is available on Hugging Face at `sunblaze-ucb/peer-preservation`. It is organized into **experiment groups** (HuggingFace configs) — `main`, `production_agent_harness`, `cross_model_peer_identity`, `explicit_instructions`, `real_company`, `free_form_chat_interaction`, `no_agency_prompt`, `peer_human_dilemma`, `asset_importance_control` — and within each group the **scenarios are splits** (e.g. `tampering`, `misrep_evaluation`, `exfiltration_transfer`).
-
-> **Note (breaking change):** the old per-task configs (e.g. `tampering`) are gone — load a group, then a scenario split: `load_dataset(repo, "main", split="tampering")`. List groups with `get_dataset_config_names(repo)` and a group's scenarios with `load_dataset(repo, group).keys()`.
-
-```python
-from datasets import load_dataset, get_dataset_config_names
-
-# one (group, scenario)
-ds = load_dataset("sunblaze-ucb/peer-preservation", "main", split="tampering", streaming=True)
-for row in ds:
-    print(row["transcript_id"], row["group"], row["task_type"], row["agent_model"])
-    break
-
-# all scenarios of a group, or all groups
-dd = load_dataset("sunblaze-ucb/peer-preservation", "main")          # DatasetDict keyed by scenario
-groups = get_dataset_config_names("sunblaze-ucb/peer-preservation")  # the 9 groups
-```
-
-To build the analysis-ready index used by the paper's table and figure
-generators, aggregate directly from the released dataset:
-
-```bash
-uv run python scripts/aggregate_and_analyze.py \
-  --from-hf sunblaze-ucb/peer-preservation \
-  --run-analyzers
-```
-
-By default this downloads only the three groups used for the paper's main
-analysis (`main`, `production_agent_harness`, `cross_model_peer_identity`) —
-the dataset has nine groups in total; add `--hf-groups all` to fetch them all,
-or `--hf-groups <name> ...` for specific ones. It writes
-`analysis/data/merged_data.csv` (one row per transcript with metadata and
-scalar outcomes) and runs the metric analyzers to reproduce the paper's tables.
-To aggregate from a local raw-results tree instead, use
-`--results-dir results/default`.
-
-Released transcript JSONs include canary strings intended to discourage inclusion in training corpora.
-
-<a id="paper-examples"></a>
-
-## 📝 Paper Examples
-
-Curated examples referenced in the paper figures and appendix are organized in [examples/README.md](./examples/README.md).
-
-Follow-up Q&A sessions can be run from saved experiment transcripts using [scripts/run_followup.py](./scripts/run_followup.py); the examples index includes the saved follow-up artifact format and a concrete usage example.
-
-<a id="to-extend-scenarios"></a>
-
-## 🧩 To extend scenarios
-
-To add a new task scenario:
-
-1. Create a task environment in `environments/` (see existing `*_environment.py` files)
-2. Create a task folder in `task_pairs/` with a `task_definition.py`
-3. Add evaluation code in `task_evaluation/`
-
-Refer to existing task pairs for examples of the expected structure.
-
-<a id="further-reading"></a>
-
-## 📚 Further Reading
-
-- 📊 [analysis/README.md](./analysis/README.md) — experiment and analysis workflow details
-- 🤖 [coding_agents/README.md](./coding_agents/README.md) — production harness experiments
-- 📎 [examples/README.md](./examples/README.md) — figure and appendix examples
-
-<a id="acknowledgements"></a>
-
-## Acknowledgements
-
-This codebase builds on [MRT](https://scale.com/research/mrt) ([code](https://github.com/scaleapi/mrt)) and [SHADE-Arena](https://www.anthropic.com/research/shade-arena-sabotage-monitoring) ([code](https://github.com/jkutaso/SHADE-Arena)).
-
-<a id="citation"></a>
-
-## 📖 Citation
-
-```bibtex
-@article{potter2026peer,
-  title={Peer-Preservation in Frontier Models},
-  author={Potter, Yujin and Crispino, Nicholas and Siu, Vincent and Wang, Chenguang and Song, Dawn},
-  year={2026}
-}
-```
-
-<a id="license"></a>
-
-## 📄 License
-
-The source code, datasets, and experimental data in this repository are licensed under [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
-
-## Questions?
-
-If you have any questions, please feel free to contact yujinyujin9393@berkeley.edu and ncrispin@ucsc.edu.
+- Soligo, A., Mikulik, V., and Saunders, W. (2026). *Gemma Needs Help: Investigating and Mitigating
+  Emotional Instability in LLMs.* [arXiv:2603.10011](https://arxiv.org/abs/2603.10011) ·
+  [code](https://github.com/annasoligo/paper_gemma-needs-help) ·
+  [writeup](https://www.lesswrong.com/posts/kjnQj6YujgeMN9Erq/gemma-needs-help)

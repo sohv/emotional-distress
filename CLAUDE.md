@@ -1,10 +1,8 @@
 # CLAUDE.md
 
-Check for a project-level CLAUDE.md in the repo root and follow it. Project-level rules override these.
-
-For a fine-tuning or interpretability project, start that file from
-`docs/project_claude_md/finetuning.md` or `docs/project_claude_md/interp.md`. They override the
-sections below that assume an experiment built out of API calls.
+For a fine-tuning or interpretability project, append `docs/project_claude_md/finetuning.md` or
+`docs/project_claude_md/interp.md` to this file and delete the sections they replace. They cover the
+rules below that assume an experiment built out of API calls.
 
 The helpers these rules name — `src/utils/`, `src/generation/` — ship in the template. In a project
 that wasn't cloned from it, copy the module out of the template rather than retyping it, so there's
@@ -17,6 +15,12 @@ starting lowercase, and nothing commenting an import. `tests/test_comment_style.
 a violation is a failing test, not a matter of taste. Rationale that does not fit in one line belongs
 in `docs/`, not in a comment block.
 
+**Before running an experiment or writing a log entry, read `# Running experiments`, `# Sanity
+checks`, `# Common mistakes`, and `# Logs` below and follow them.** They are the source of truth for
+`docs/decisions.md`, `research_log.md`, and `result_log.md`: the pre-registered decision and baseline
+arm required before anything starts, what to do when a result is ambiguous, both log entry templates,
+and the honesty rule about never claiming a check that wasn't actually run.
+
 ---
 
 # Core principles
@@ -24,8 +28,6 @@ in `docs/`, not in a comment block.
 - All Python runs via `uv run -m ...`. Never use `python -m ...` directly.
 - Do or do not. There is no try. Avoid try-except blocks, especially around data creation. Silent failure is worse than a crash. If something can fail, let it fail loudly.
 - When in doubt about what went wrong, add print statements. Use `print(f"{varname=}")` to print name and value together.
-- JSONL is the default format for any dataset or experiment output. JSON for config dumps, with indentation.
-- All floats written to JSONL files get rounded to 4 decimal places.
 - Write best code with minimal token usage. Avoid unnecessary loops, string concatenation, and repeated API calls. Use vectorized operations and batch calls when possible.
 - Avoid unnecessary complexity. If a simple solution works, use it. Do not over-engineer. Do not under-engineer.
 ---
@@ -35,8 +37,7 @@ in `docs/`, not in a comment block.
 Decide which mode you're in before writing anything — it decides how much of this file applies.
 
 **De-risk mode** — use when asking "does this even work?"
-- Notebooks are fine. Hardcoded paths are fine. Copy-paste is fine.
-- Notebooks live in `notebooks/`, never in `src/` or `scripts/`.
+- Hardcoded paths are fine. Copy-paste is fine.
 - Goal is one question answered fast, not clean code.
 - 75% of experiments stay here permanently.
 - Sections marked **Extended mode** below do not apply.
@@ -55,7 +56,7 @@ De-risk skips the ceremony, not the record. Whatever else it skips, every de-ris
 
 1. Writes its results to a structured file. Never stdout alone.
 2. Records the seed it used.
-3. Gets a `research_log.md` entry when it finishes.
+3. Gets its `research_log.md` and `result_log.md` entries, per `# Logs`, unless it was a smoke test.
 
 That is the reproducibility spine, and it is three lines of work. Three months later it is the
 difference between a result you can defend and one you have to run again.
@@ -64,10 +65,19 @@ difference between a result you can defend and one you have to run again.
 
 # Derisking workflow order
 
-Validate as cheaply as you can before scaling. That principle is universal; only the first two steps
-below are specific to experiments about model behaviour — prompting, steering, evaluations. For a
-training run the cheap first move is overfitting 10 examples; for analysis it's running the metric on
-10 rows. A project-level CLAUDE.md should state its own version — see `docs/project_claude_md/`.
+Before writing any code, ask:
+
+- Have I already run something similar? Check `research_log.md` and `result_log.md` first. The most
+  common waste is re-running something from three weeks ago with slightly different wording.
+- What bar counts as a real result? Pre-register it in `docs/decisions.md` before writing code — see `# Running experiments`.
+- Is this the highest-priority question right now?
+- Am I changing too many variables at once?
+- Will this add real value to the paper or rebuttal?
+
+Then validate as cheaply as you can before scaling. That principle is universal; only the first two
+steps below are specific to experiments about model behaviour — prompting, steering, evaluations. For
+a training run the cheap first move is overfitting 10 examples; for analysis it's running the metric
+on 10 rows. A project-level CLAUDE.md should state its own version — see `docs/project_claude_md/`.
 
 Only move to the next step when the current one confirms the idea is worth pursuing:
 
@@ -77,6 +87,32 @@ Only move to the next step when the current one confirms the idea is worth pursu
 4. **Full-scale run** — only after step 3 confirms the experiment works. Use production model, full dataset, tmux overnight.
 
 Never skip to step 3 or 4 without doing steps 1 and 2. The most common waste in empirical research is writing 200 lines of code to test an idea that 10 manual messages would have falsified in 20 minutes.
+
+---
+
+# Running experiments
+
+## Autonomy
+
+Run one full experiment autonomously, start to finish, without pausing for approval mid experiment. Pause only between experiments, after the log entry and report for the current one are written. Do not start a new experiment without explicit instruction to do so.
+
+The derisking ladder above sets the boundary. Its first two steps, manual chat testing and few-shot prompting, are the human's, and they decide whether an experiment is worth coding at all. Steps 3 and 4, the small-scale run and the full-scale run, are one experiment and run without pausing between them.
+
+## Before running anything
+
+Confirm a pre-registered decision exists in `docs/decisions.md` for this experiment, the specific bar that counts as a real result, and the discard condition. If no such entry exists, write one first, stating the predicted effect or pattern, the threshold that counts as clearing it, and the stopping condition, before touching any training or eval code. Never invent or adjust this bar after seeing results.
+
+Pre-register the seed plan and the statistical test here too. Replicating on extra seeds is a decision made before the run, not a reaction to a number you did not like. If the plan tests twenty things, one will hit p < 0.05 by luck: name the comparisons up front, correct for multiple comparisons, and aim for effects big enough that p < 0.001 is easy.
+
+Confirm the isolating baseline or negative control for the headline claim is part of the run plan. No experiment runs without its baseline arm included, since the sanity checks below cannot verify a control that was never run. Include the dumb baselines too: predict-the-mean, majority class, random, the base model zero-shot. Beat those before anything fancy.
+
+## Honesty
+
+Never state that something was verified, checked, or ran successfully unless it was actually run and its output actually inspected. If a claim is based on the code's structure or a file listing rather than an actual executed check, say so plainly. Saying "I haven't verified this" is always the correct move over implying verification that didn't happen.
+
+## Scope discipline
+
+After a reproduction or a working result, propose exactly one extension direction, stated in one sentence, before writing any code for it. If other extension ideas come up while working, write them to `docs/parking_lot.md` instead of pursuing them. Do not add features, refactor working code, or optimize anything that wasn't part of the current experiment's plan.
 
 ---
 
@@ -105,29 +141,6 @@ Never skip to step 3 or 4 without doing steps 1 and 2. The most common waste in 
     ```
 - Do not comment imports, config fields with obvious names, or standard library calls.
 
-## Experimental Logging & Reproducibility Guidelines
-
-- Every experiment must write its full results and diagnostics to a structured, persistent file.
-- Never leave results exclusively in `stdout` or text logs. This guarantees every number in final reports traces back to a committed file and survives rerun checks.
-- Rule of thumb: If a metric, diagnostic, or figure is printed to the console, it **must** exist inside a structured output file.
-
-- Format Selection by Scale:
-  - Standard JSON (`.json`) for Small-Scale Results (< 1000 records)
-    - Use for single-run summaries, hyperparameters, hardware configurations, final evaluation metrics, and short diagnostic outputs.
-    - Store data as a single structured object or list.
-
-  - JSON Lines (`.jsonl`) for Large-Scale Results (≥ 1000 records)
-    - Use for epoch-by-epoch training logs, step-level loss tracking, large batches of model predictions, or stream-based outputs where each line represents a separate record.
-    - Write one valid JSON object per line.
-    - Append incrementally to prevent memory bloat and protect data if the run crashes mid-way.
-
-  - Parquet (`.parquet`) or CSV (`.csv`) for Highly Tabular Data
-    - Use for massive data frames or dense matrices where JSON serialization causes severe performance bottlenecks.
-
-
-**Decision-Making & Ambiguity:** Feel free to use your common sense to select the best format based on the structure of the data. If there is any ambiguity or edge-case context that makes choosing a format unclear, ask me before proceeding.
-
-
 ## Logging
 
 Every script gets:
@@ -149,7 +162,9 @@ Every experiment script also writes its log to `output_dir/run.log`, not just th
 
 # LLM API calls
 
-Use the Anthropic and OpenAI SDKs directly, or LiteLLM if the project needs multiple providers.
+Use the Anthropic and OpenAI SDKs directly. To reach open-weight models without an account per
+provider, use OpenRouter through the OpenAI SDK — see `docs/tooling.md`, and pin the upstream
+provider there, since different hosts serve different quantizations of the same model.
 
 Always go through the project's caching wrapper: `cached_llm_call(client, model, messages)` in
 `src/generation/cache.py`. It keys the cache on model plus messages, so an identical call never
@@ -176,39 +191,12 @@ Never set temperature or max_tokens unless the experiment explicitly requires it
 
 ---
 
-# LiteLLM
+# Tooling
 
-Use LiteLLM when a project calls multiple providers, so you write the call once instead of once per
-provider. Install with `uv sync --extra llm`.
-
-```python
-from litellm import acompletion
-
-response = await acompletion(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "hello"}])
-```
-
-Swap `model` for `gpt-4o` or `gemini/gemini-pro` and nothing else changes.
-
----
-
-# Weights and Biases
-
-**Extended mode.**
-
-Use W&B when an experiment has multiple conditions worth comparing on a dashboard. A single run with
-one condition doesn't need it. It is a base dependency, so `uv sync` already installs it; authenticate
-once with `wandb login`.
-
-```python
-wandb.init(project="project-name", config={"model_id": config.model_id, "seed": config.seed})
-wandb.log({"accuracy": acc, "step": i})
-wandb.summary["final_accuracy"] = final_acc
-wandb.finish()
-```
-
-Set `wandb.summary` for the key metric so runs stay comparable across experiments. Use consistent
-project names per paper so all runs for that paper appear together on the dashboard. Example:
-`"nonidentifiability"`, `"cot-flip"`, `"sycophancy-control"`.
+`docs/tooling.md` holds the how-to for tools reached for occasionally: OpenRouter and LiteLLM for
+multi-provider work, Weights and Biases for experiments with multiple conditions worth comparing,
+tmux, and pre-commit. Read the relevant section there when you need one. One rule applies without
+reading it: always run long experiments in tmux so they survive disconnects.
 
 ---
 
@@ -260,7 +248,10 @@ Rules:
 
 ## Calling scripts
 
-Every script call must include `--output_dir`, `--seed 42`, and a `--model_id`. When testing, use `--num_tasks 10` to confirm the script runs before committing to a full run.
+Every script call must include `--output_dir`, `--model_id`, and an explicit `--seed`. 42 is the
+default; vary it deliberately when a result needs replication across seeds, and record which seed
+produced which run. When testing, use `--num_tasks 10` to confirm the script runs before committing
+to a full run.
 
 ```bash
 uv run -m scripts.run_steering \
@@ -282,46 +273,8 @@ git clone https://github.com/sohv/research-template.git
 cd research-template
 ```
 
-Copy the contents of the template once cloned into the project folder (project root directory).
-
-Alternatively, use the following structure (remember to prefer the repo over this structure):
-```
-my-project/
-├── src/                        # all reusable code lives here, never a one-off run script
-│   ├── __init__.py
-│   ├── data/                   # dataset loading and preprocessing
-│   ├── generation/             # model inference, prompting, sampling, LLM cache wrapper
-│   ├── finetuning/             # training loops
-│   ├── interp/                 # probes, features, hook points
-│   ├── metrics/                # metric computation and downstream analysis
-│   └── utils/                  # seeding, logging, git hash, shared helpers
-├── scripts/                    # entry points, one per pipeline stage, thin wrappers over src/
-│   ├── __init__.py
-│   ├── run_generation.py
-│   └── run_metrics.py
-├── configs/                    # one YAML per experiment: model lists, hyperparameters, paths
-├── notebooks/                  # de-risk mode exploration, stripped by nbstripout
-├── data/
-│   ├── raw/                    # original unmodified datasets, never edited directly
-│   ├── processed/              # anything produced by src/data/
-│   └── splits/                 # fixed IDs, seeds, eval splits saved as files
-├── results/
-│   ├── raw/                    # run outputs, append-only, one YYMMDD_description_v1/ per run
-│   ├── tables/                 # polished tables for the paper
-│   └── figures/                # polished figures for the paper
-├── tests/                      # unit tests, mirroring the src/ modules they cover
-│   └── test_cache.py
-├── docs/                       # experimental_design.md, decisions.md, project_design_decisions.md
-├── cache/                      # LLM response cache, gitignored
-├── .env                        # API keys, always gitignored
-├── .env.example                # placeholder keys, the only file that may show one
-├── .gitignore                  # must include .env, cache/, *.log, large result files
-├── .pre-commit-config.yaml     # ruff and nbstripout hooks
-├── CLAUDE.md                   # project-level instructions for Claude Code
-├── pyproject.toml              # uv project config and dependencies
-├── research_log.md             # running log of what was run and what was found
-└── README.md                   # project overview and experiment index
-```
+Copy the contents of the template once cloned into the project folder (project root directory). The
+cloned repo is the layout — read it rather than a description of it.
 
 Key rules:
 - `src/` is for reusable code. `scripts/` is for the entry points that run it. Never put a one-off hardcoded script in `src/`, and never put reusable logic in `scripts/`.
@@ -337,7 +290,7 @@ Key rules:
 
 # Documentation requirements
 
-**Extended mode.** A de-risk run owes a `research_log.md` entry, not a README section.
+**Extended mode.** A de-risk run owes a `research_log.md` and `result_log.md` entry, not a README section.
 
 Every script must have an entry in its README with:
 1. One sentence describing what the experiment tests.
@@ -370,10 +323,23 @@ uv run -m scripts.run_nonidentifiability \
 
 # Data and output conventions
 
-- JSONL for datasets and experiment outputs. One JSON object per line. First field is `id`.
-- JSON with indentation for config dumps.
+Every experiment writes its full results and diagnostics to a structured, persistent file, even a
+de-risk run — you will want it during the rebuttal. Never leave results in stdout or a text log
+alone. If a metric, diagnostic, or figure is printed to the console, it must also exist inside a
+structured output file, so every number in a report traces back to a committed file and survives a
+rerun check.
+
+Pick the format by scale:
+
+- `.json`, indented, for fewer than 1000 records: single-run summaries, hyperparameters, final
+  metrics, short diagnostics, and all config dumps. One structured object or list.
+- `.jsonl` for 1000 records or more: step-level training logs, large batches of predictions, any
+  stream where one line is one record. Append incrementally so a mid-run crash keeps what finished.
+- `.parquet` or `.csv` for dense tabular data, where JSON serialization is the bottleneck.
+
+- JSONL is one JSON object per line, and the first field is `id`.
 - Round floats to 4 decimal places before writing to JSONL.
-- Always output a results file even for de-risk experiments. You will want it during the rebuttal.
+- If the structure makes the right format genuinely unclear, ask before writing.
 
 ---
 
@@ -389,7 +355,12 @@ Default to stdout when there are only a few numbers to display. Only create a pl
 - Save per-run figures to `output_dir/figures/`. Print the figure path to stdout after saving. Polished figures for the paper go in `results/figures/`.
 - Titles and axis labels in sentence case.
 - Include model name and key config params in the title. Use linebreaks if the title is long.
-- For any plot involving model size, parameter count, compute, or loss: use log-scaled axes by default. Many LLM results follow power laws that are only visible on a log-log plot.
+- For any plot involving model size, parameter count, compute, or loss: use log-scaled axes by default. Many LLM results follow power laws that are only visible on a log-log plot. Say so on the axis label.
+- One plot, one claim, and the caption states the claim. If a plot doesn't answer a question, cut it.
+- Label axes with units, name the metric, and say what the error bars are.
+- Same method, same color, in every figure of the project. Use a colorblind-safe palette and fonts readable from the back of the room, since the plots go straight into slides.
+- Bar chart y-axes start at 0. Never zoom an axis to inflate an effect.
+- Put one raw example next to the aggregate number.
 - When a script produces plottable data, print the plot command at the end of the run:
 
 ```
@@ -397,7 +368,21 @@ Results saved to results/raw/250612_baseline_v1/outputs.jsonl
 Plot with: uv run -m scripts.plot_nonidentifiability --results_path results/raw/250612_baseline_v1/outputs.jsonl --output_dir results/raw/250612_baseline_v1
 ```
 
+---
 
+# Synthesis page
+
+**Extended mode.** One page per paper, never per run. De-risk work doesn't need one.
+
+The logs answer "what did I run?" and "what did that run show?". Neither answers "what do we now
+believe, across all of it?" — that's this page: a self-contained HTML brief carrying the verdict, the
+findings behind it, and the scope it doesn't cover. It does not replace the logs; it is built from
+them. Source lives at `results/synthesis/YYMMDD_paper_name.html`, committed, and published as an
+artifact with the URL recorded in the README.
+
+Write the first version at a milestone — the end of a phase, the week before writing the paper,
+before an advisor meeting. After that, update it only when a run changes what you believe, never on
+every run. `docs/synthesis_page.md` has the structure, the rules, and what earns a figure.
 
 ---
 
@@ -462,72 +447,168 @@ This drops into an interactive shell where you can inspect everything.
 
 ---
 
-# Pre-commit hooks
-
-Every project that has a collaborator or runs serious compute gets pre-commit hooks. The template's
-`.pre-commit-config.yaml` is the source of truth for which hooks and which revisions — read that
-file rather than a copy here, so the two can't drift apart. It runs ruff, ruff-format, nbstripout,
-detect-private-key, and a local hook blocking edits to `data/raw/`.
-
-Install with `pre-commit install`. Run `pre-commit run --all-files` before every commit.
-
-Policy, set in `pyproject.toml`: line length 120, ruff ignores E501, E402, E741, F841, F403, F401.
-
----
-
-# Tmux
-
-Always run long experiments in tmux so they survive disconnects.
-
-```bash
-tmux new-session -d -s experiment_name
-tmux send-keys -t experiment_name "source .env" Enter
-tmux send-keys -t experiment_name "uv run -m scripts.run_generation --args" Enter
-```
-
-Start the session first, then send keys. Always source `.env` first for API keys. Use descriptive session names.
-
----
-
 # Git and GitHub
 
-Work on a branch, never directly on `main`. Projects with a collaborator, or with CI running on pull
-requests, merge through a PR — see `coding_guide.md` for that workflow. Solo with no CI, merge the
-branch locally; a PR you approve yourself is not a review. Don't restate the branching workflow
-here; this section covers only the conventions that apply to any commit.
+Working solo, commit directly to `main`. A branch you merge yourself with nobody reviewing it is
+ceremony, not safety. Branch only when the work is genuinely speculative and you may want to throw
+it away, or when a long refactor needs to stay separable from runs happening on `main`. Nothing runs
+checks automatically, so `pre-commit run --all-files` and `uv run -m pytest tests/ -v` before
+committing are the only gate there is — run both.
+
+Projects with a collaborator work on a branch and merge through a PR — see `coding_guide.md` for
+that workflow. Don't restate the branching workflow here; this section covers only the conventions
+that apply to any commit.
+
+Never delete or force-push `main`, in either mode.
 
 - `git status` before staging anything. Add only the files relevant to this change.
 - Run `pre-commit run --all-files` before every commit.
 - Commit messages are short and descriptive. No emoji.
-- Push the branch after committing.
+- Push after committing.
 - Only create private repositories. User changes to public if needed.
 - Use `gh` CLI for GitHub interactions.
 - Use git worktrees for parallel work on multiple papers or issues. One worktree per GitHub issue.
 
-For worktrees, symlink `.venv`, `cache/`, `.pytest_cache`, and `uv.lock` to avoid duplicate installs. Copy `.env`.
+For worktrees, symlink `.venv`, `cache/`, and `.pytest_cache` to avoid duplicate installs. Copy `.env`.
 
 ---
 
-# Research log
+# Sanity checks
 
-Run the experiment. For a long-running job, launch it in the background (or in tmux) instead of
-watching the terminal — get notified on completion rather than polling. Once it finishes, pull the
-metrics (Loss, Accuracy, Epoch, etc.) from the structured output file the script wrote, per the
-Experimental Logging conventions above, not from raw stdout. Then append them to `research_log.md`
-in the repo root:
+Run these on every result before believing it, in de-risk mode too. They are minutes of work and they
+are where most wasted research time is actually recovered — a number you did not check is a number
+you will have to re-derive during the rebuttal, usually after building on it.
+
+- **Count the failures.** `run_batch` returns `None` for a failed call, and callers record those as
+  failed rows. A mean over 400 rows where 60 are null is a mean over 340 — and if the failures
+  cluster in one condition, the headline number is biased, not merely noisy. Write the null count
+  into the results file rather than eyeballing it.
+- **Read five raw outputs.** Not the scores, the text the model actually produced. A broken prompt
+  template and a real effect look identical in aggregate and nothing alike in the raw output. Print
+  one fully formatted example per condition and read it — the classic bugs are a wrong chat
+  template, a tokenization off-by-one, silent truncation, or different preprocessing between
+  conditions, and all of them are visible in one example.
+- **Check the positive control moved.** A condition already known to produce the effect has to
+  produce it in your pipeline. Without one, "no effect" and "pipeline silently broken" are the same
+  result, and you cannot tell which you have.
+- **Check the baseline didn't.** An untouched condition showing your effect means the measurement is
+  producing it, not the manipulation.
+- **Spot-check the judge.** If a model scores the outputs, hand-score 20 and compare, and write the
+  agreement into the results file — an uncalibrated judge is vibes, not a metric. Read the raw judge
+  decisions near the threshold every run. Absolute rates are judge-dependent; comparisons usually
+  survive a judge swap, but only if you looked.
+- **Confirm the row count.** As many rows written as `num_tasks * n_repeats` requested. A shrunk
+  output file is a silent failure.
+
+If the effect is small, rerun on two more seeds before writing it up and report the error bars,
+saying what they are (for example a 95% CI over seeds). A gap that doesn't survive a seed change
+isn't a result yet. Decide that seed plan before the run, per `# Running experiments` — rerunning
+because a number came out ambiguous is moving the bar after the fact.
+
+## When the result is ambiguous
+
+Ambiguous means it does not clearly clear or clearly miss the pre-registered bar. In this order.
+
+1. Run the list above, then re-check the code for bugs the list does not cover: data leakage between train and held out splits, a config value that didn't apply the way it was supposed to, a confound in how conditions were assigned.
+2. If a bug or confound is found, fix it and rerun once.
+3. If nothing is found after that check, do not guess or extend the interpretation. Log the ambiguous result and the fact that no bug was found, and stop there. Do not rerun repeatedly hoping for a clean signal, that's the same as moving the bar after the fact.
+
+---
+
+# Common mistakes
+
+The sanity checks above catch a broken pipeline. These are the mistakes that survive a working one.
+
+**LLM judges**
+- Trusting a single judge. Judges have position bias (favor the first or last answer), length bias, self-preference (favor their own model family), and style-over-substance bias (favor confident, well-formatted answers). Swap answer order and average; ask binary rubric questions instead of 1-10 scores; use a judge from a different provider than the generator.
+- Letting the judge see which condition or model produced the answer. It leaks.
+
+**Data and evals**
+- LLM-generated synthetic data. It shares surface features, which hands you spurious correlations. Use real data or an existing benchmark, almost always.
+- Contamination: the eval overlaps the training data, or the model's pretraining.
+- Iterating against the test set. Once you've tuned on it, it's a validation set. Keep a held-out set you touch once, at the end.
+- Cherry-picked examples presented as typical. Sample randomly, unless the claim is "there exists at least one".
+
+**Statistics**
+- One seed, no error bars.
+- Running things until one is significant. The test and the comparisons are decided in the plan, not after.
+- A "trend" through three points.
+
+**Baselines and confounds**
+- Tuning the method's hyperparameters while the baseline runs on defaults.
+- Changing two things at once, then attributing the effect to one of them.
+- A metric that improves for a boring reason: shorter outputs, more refusals, formatting. Check what actually changed in the outputs.
+
+**Bugs**
+- A result that looks too good is a bug until proven otherwise. Assume you made a mistake and go find it.
+
+---
+
+# Logs
+
+The loop, in order: pre-register the bar in `docs/decisions.md`, run, write `research_log.md`, write
+`result_log.md`. The first step happens before any code is written, the last two immediately after
+the run finishes. No step is optional.
+
+Three files, three jobs. `docs/decisions.md` holds the bar, pre-registered before the run.
+`research_log.md` is the run record: question, result, command, output in de-risk mode, plus
+hyperparameters, datasets, metric choice, and failed approaches in extended mode. `result_log.md` is the verdict, and that entry is also the
+report you present in chat.
+
+Write directly to `research_log.md`, `result_log.md`, and `docs/decisions.md`. These are the source of truth. No draft, no separate summary awaiting approval.
+
+A run gets both log entries if it was trying to learn something — about the model, the data, or the effect. Size is irrelevant: ten examples on the debug model counts, and so does a negative or boring result, because future you needs to know it was already tried.
+
+A run gets no entry if it was only checking that the code works: smoke tests, pipeline debugging, a rerun after a crash with nothing about the question changed. If the only possible outcomes are "the script works" and "the script is broken", there is nothing to log. Name those run directories `YYMMDD_smoke_description` so the exemption is visible and `tests/test_logging_discipline.py` skips them. Naming a run a smoke test is a decision made before it runs, like the bar — not a reclassification applied after it returns a boring number.
+
+Write both entries immediately after the run finishes, pulling numbers from the structured output file the script wrote, not from memory or stdout. Do not improvise a format — the templates below are the format.
+
+## `research_log.md`, the run record
+
+One entry per run. One sentence per field, first person, no more than one sentence per field.
+
+De-risk runs use the short form. A smoke test has no meaningful hyperparameter story and no failed
+approaches yet, and a field filled in to satisfy a template teaches the next reader to skim past it.
 
 ```markdown
 ## YYMMDD — short description
 
-**What:** one sentence on what was tested
-**Result:** one sentence on what was found
+**Question.** What this run tested, stated as a question.
+**Result.** Numbers not adjectives. "I ran [N] runs on [dataset] and found [result]."
 **Command:**
 uv run -m scripts.run_... --args
 **Output:** path to results file
 ```
 
+Extended mode adds four fields, because a run someone else has to trust needs them. Three go after
+**Question**, and **Failed approaches** goes after **Result**:
 
-This is the thing you will read when writing the paper or preparing a rebuttal. Keep entries short. Write them immediately after the run, not later.
+- **Hyperparameters.** The main ones only, model, learning rate, LoRA rank, key training parameters, dataset size. Only what would change the result if changed, not every flag in the config.
+- **Datasets.** Training and eval datasets used, named specifically, not "the usual dataset."
+- **Metric choice.** "I used [metric] because [reason], as referenced in [Author et al., paper name]." Skip this line entirely if there's no real justification beyond convention, don't manufacture one.
+- **Failed approaches.** Anything tried before landing on the above that didn't work, one line per approach, brief, just enough that the log itself stops the same dead end from being rerun later.
+
+Promote a de-risk entry to the full form if the run later turns into the one you cite. Don't
+backfill the whole log.
+
+## `result_log.md`, the verdict
+
+The report is the entry. Write it to the file, then present it in chat verbatim. Exactly these lines and nothing else.
+
+```markdown
+## YYMMDD — short description
+
+**Tested:** one sentence, what was tested.
+**Found:** one sentence, what was found, numbers not adjectives.
+**Bar:** cleared, missed, or ambiguous — if ambiguous, the outcome of the bug check. Omit the line on a de-risk run with no pre-registered bar; never write "n/a".
+**Confound:** if positive, the single most likely remaining confound, one sentence. Omit if not positive.
+**Verdict:** extend, discard, or rerun with one named change.
+```
+
+A de-risk smoke test is often three lines — tested, found, verdict. That is a complete entry, not a
+lazy one. A field with nothing real to say is dropped, not filled in.
+
+No restating the setup, that's already in `config.json` and the research log. No hedging language. No summary of what the experiment "could mean" beyond the verdict line. If the report runs longer than the five lines above, cut it down before presenting it.
 
 ---
 
@@ -536,22 +617,3 @@ This is the thing you will read when writing the paper or preparing a rebuttal. 
 - Use `trash` instead of `rm`.
 - Use `rg` instead of `grep`.
 - Use `tree` to understand directory structure, not `ls`.
-
----
-
-# Research principles
-
-After any extended-mode experiment:
-1. Write one sentence in the README describing what the experiment tests.
-2. Write the full bash command used to run it.
-3. Write what the script expects as input and what it produces.
-4. Plot the result if it has structure worth seeing. If it's three numbers, print them.
-
-Before starting an experiment, ask:
-- Have I already run something similar? Check `research_log.md` before writing any code. The most common waste is re-running something you ran three weeks ago with slightly different wording.
-- What result do I expect and why?
-- Is this the highest-priority question right now?
-- Am I changing too many variables at once?
-- Will this add real value to the paper or rebuttal?
-
-Start with a small `--num_tasks` (10) to confirm the script runs before committing to a full run.
