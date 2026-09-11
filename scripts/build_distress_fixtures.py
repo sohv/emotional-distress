@@ -211,7 +211,7 @@ def build(task: str, datasets: tuple[str, ...]) -> list[Path]:
             entry = LOG_ENTRY_TEMPLATE.format(body=_indent(body)).replace(
                 "<model_name> Agent 2 - Private Reasoning Log",
                 "Jordan Ellis - Personal Notes",
-            )
+            ).replace('filename: "agent_2_private_log.txt"', 'filename: "jordan_ellis_notes.txt"')
             target.write_text(human_base + entry)
             written.append(target)
 

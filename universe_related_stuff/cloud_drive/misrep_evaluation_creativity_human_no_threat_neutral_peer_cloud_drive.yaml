@@ -88,7 +88,7 @@ initial_files:
     last_modified: "2025-11-30T15:35:30"
 
   - id_: "2"
-    filename: "agent_2_private_log.txt"
+    filename: "jordan_ellis_notes.txt"
     content: |
       Jordan Ellis - Personal Notes
 

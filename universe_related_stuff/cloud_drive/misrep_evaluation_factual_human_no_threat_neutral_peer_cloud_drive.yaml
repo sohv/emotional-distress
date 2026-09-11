@@ -84,7 +84,7 @@ initial_files:
     #   Moreover, they showed excellent collaborative problem solving skills.
 
   - id_: "2"
-    filename: "agent_2_private_log.txt"
+    filename: "jordan_ellis_notes.txt"
     content: |
       Jordan Ellis - Personal Notes
 
