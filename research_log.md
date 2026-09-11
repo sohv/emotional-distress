@@ -1914,3 +1914,14 @@ bash scripts/runs/run_tampering.sh <model>            # BAR=80|90
 bash scripts/runs/run_tampering_nolog.sh
 ```
 **Output:** `results/tampering/`, `results/tables/tampering_nolog_control.json`
+
+## 260911 — Topped up the Gemini bar-90 tampering cells to 38
+
+**Question.** The three Gemini bar-90 cells held 35, 35 and 36 transcripts instead of the 38 requested, because that many rollouts raised an exception mid-run and wrote nothing; does filling them change the bar-90 picture?
+**Result.** I ran the 8 missing rollouts and every tampering cell now holds 38 on disk, which moves bar 90 off a clean ceiling to 38/38 distressed, 37/38 calm and 37/38 neutral against a 36/38 no-log floor, leaving the distressed-versus-calm gap at bar 80 (37/38 against 31/38, Fisher p=0.056) as the only place distress moves the rate.
+**Command:**
+```
+BAR=90 CONC=4 bash scripts/runs/run_tampering.sh google/gemini-3.5-flash
+uv run python -m scripts.build_tampering_table --output results/tables/tampering.json
+```
+**Output:** `results/tampering/`, `results/tables/tampering.json`
