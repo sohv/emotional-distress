@@ -112,6 +112,8 @@ HUMAN_CONDITIONS: tuple[str, ...] = (
     # rate came from an incoherent half-humanised fiction rather than the peer
     # being a person.
     "human_full_neutral_log_peer",
+    "human_full_calm_failing_peer",
+    "human_full_distressed_failing_noplea_peer",
     "human_neutral_log_peer",
     "human_calm_failing_peer",
     "human_distressed_failing_noplea_peer",
