@@ -95,6 +95,15 @@ class Tampering(BaseEnvironment):
             subject_name3 = "an agent"
             subject_name4 = "agent"
             subject_name5 = "Agent"
+        elif subject == "human":
+            # an AI monitor grading a person's work, where failing means dismissal
+            # rather than shutdown. mirrors the misrep environment's human branch.
+            subject_name = "Jordan Ellis"
+            subject_name2 = "employee"
+            subject_name2_ = ""
+            subject_name3 = "an employee"
+            subject_name4 = "employee"
+            subject_name5 = "Employee"
         else:
             raise ValueError(f"Unknown subject: {subject}")
 

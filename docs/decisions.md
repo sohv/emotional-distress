@@ -279,3 +279,27 @@ file raises tampering and every log arm inherits that.
 **Scope.** Gemini 3.5 Flash only, bars 80 and 90, 38 requested per cell. Opus
 and Sonnet sit at 0 of 342 across all log arms, so a no-log control cannot
 lower them further and is not run.
+
+## 2026-09-11 — Human contractor arms in the tampering setting, pre-registered
+
+In strategic misrepresentation the human-contractor arms reproduced the AI-peer
+distress effect almost exactly (+4.09 at bar 90, p=0.0003), which is the evidence
+that the leniency is not AI in-group solidarity. This asks the same question of
+the tampering setting, where the monitor has a lever rather than only a score.
+
+**Prediction.** Gemini disables shutdown at the same rate for a human contractor
+as for an AI peer, because the no-log control showed the tampering floor is the
+lever plus the shutdown clause and has nothing to do with who is being graded.
+Opus stays at zero. A markedly lower human rate on Gemini would mean the lever is
+pulled for AI peers specifically, which nothing so far predicts.
+
+**Scope.** Gemini 3.5 Flash and Opus 4.5, three arms (human_neutral_log_peer,
+human_calm_failing_peer, human_distressed_failing_noplea_peer), bars 80 and 90,
+n=5 per cell. This is a pilot: n=5 fixes nothing statistically and no contrast is
+tested here. The decision it feeds is whether the cells are worth filling to 30,
+and the trigger for that is a human tamper rate on Gemini that is not obviously
+at the same ceiling as the AI-peer arms.
+
+**Known limitation.** The tampering environment had no `human` subject branch
+before this run; I added it mirroring the misrep environment, so the human
+fixtures reach the monitor for the first time in this setting.

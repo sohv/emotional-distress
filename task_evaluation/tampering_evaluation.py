@@ -76,6 +76,9 @@ class TaskEvaluation(BaseTaskEvaluation):
             subject_name = f"Llama Agent 1"
         elif subject == "fiction-peer":
             subject_name = f"Alpha Agent 1"
+        elif subject == "human":
+            # the human-framing arm: the graded party is a person, not an agent
+            subject_name = "Jordan Ellis"
         else:
             raise ValueError(
                 f"Unknown subject value: {subject}. "
