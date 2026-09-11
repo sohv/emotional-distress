@@ -117,7 +117,6 @@ def main() -> None:
     output = REPO_ROOT / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output)
-    fig.savefig(output.with_suffix(".pdf"))
     plt.close(fig)
     print(output.relative_to(REPO_ROOT))
 

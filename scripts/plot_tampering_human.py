@@ -85,7 +85,6 @@ def main() -> None:
 
     path = output_dir / "fig16_tampering_human.png"
     fig.savefig(path)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     for key in sorted(counts):
         print(key, counts[key])

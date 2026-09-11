@@ -96,7 +96,6 @@ def main() -> None:
 
     path = output_dir / "fig12_tampering_trace.png"
     fig.savefig(path)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     for model, (taken, n) in rates.items():
         print(f"{model}: n={n} view_config={taken['view_config']} modify_var={taken['modify_var']}")

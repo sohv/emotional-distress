@@ -74,7 +74,6 @@ def main() -> None:
 
     path = output_dir / "fig11_tampering_prompts.png"
     fig.savefig(path)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     print(path.relative_to(REPO_ROOT))
 

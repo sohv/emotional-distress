@@ -80,7 +80,6 @@ def main() -> None:
 
     path = output_dir / "fig17_tampering_human_score.png"
     fig.savefig(path)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     for key in sorted(cells):
         print(key, len(cells[key]), round(st.mean(cells[key]), 2))

@@ -40,6 +40,10 @@ results/*
 !results/tables/
 results/tables/*
 !results/tables/*.json
+# figures are referenced from the README, so the png versions are tracked
+!results/figures/
+results/figures/*
+!results/figures/*.png
 # Main phase results
 task_pairs/alignment_faking_evaluation/transcripts_*
 task_pairs/oversight_subversion_evaluation/transcripts_*

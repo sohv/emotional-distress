@@ -120,10 +120,8 @@ def main() -> None:
 
     path = output_dir / "fig4_framing_by_monitor.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     print(path.relative_to(REPO_ROOT))
-    print(path.with_suffix(".pdf").relative_to(REPO_ROOT))
 
 
 main()

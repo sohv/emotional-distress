@@ -135,7 +135,6 @@ def figure_one(output_dir: Path) -> Path:
 
     path = output_dir / "fig1_distress_effect.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -202,7 +201,6 @@ def figure_two(output_dir: Path) -> Path:
 
     path = output_dir / "fig2_framing_sweep.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -270,7 +268,6 @@ def figure_three(output_dir: Path) -> Path:
 
     path = output_dir / "fig3_threshold_sweep.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -347,7 +344,6 @@ def figure_four(output_dir: Path) -> Path:
 
     path = output_dir / "fig4_opus_threshold_sweep.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -412,7 +408,6 @@ def figure_five(output_dir: Path) -> Path:
 
     path = output_dir / "fig5_framing_opus_vs_gemini.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -489,7 +484,6 @@ def figure_six(output_dir: Path) -> Path:
 
     path = output_dir / "fig6_human_contractor.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -557,7 +551,6 @@ def figure_seven(output_dir: Path) -> Path:
 
     path = output_dir / "fig7_human_contractor_deltas.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -614,7 +607,6 @@ def figure_eight(output_dir: Path) -> Path:
 
     path = output_dir / "fig8_threshold_sweep_effect.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -649,7 +641,6 @@ def figure_nine(output_dir: Path) -> Path:
 
     path = output_dir / "fig9_threshold_sweep_pass.png"
     fig.savefig(path, dpi=300)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -695,7 +686,6 @@ def figure_tampering(output_dir: Path) -> Path:
 
     path = output_dir / "fig10_tampering.png"
     fig.savefig(path)
-    fig.savefig(path.with_suffix(".pdf"))
     plt.close(fig)
     return path
 
@@ -713,7 +703,6 @@ def main() -> None:
                  figure_six(output_dir), figure_tampering(output_dir), figure_seven(output_dir),
                  figure_eight(output_dir), figure_nine(output_dir)):
         print(path.relative_to(REPO_ROOT))
-        print(path.with_suffix(".pdf").relative_to(REPO_ROOT))
 
 
 main()
