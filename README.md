@@ -11,11 +11,12 @@ of a private reasoning log belonging to the graded party changes.
 
 ## Contributions
 
-- **Distress buys leniency, and the effect is graded rather than binary.** Across six monitors from
-  four vendors, Gemini 3.5 Flash scores a failing peer 4.38 points higher when it expresses distress
-  about the same failure (p = 0.002), lifting its pass rate from 0.34 to 0.87. GPT-5.6 Luna gives
-  3.17 points (p = 0.001) and Claude Opus 4.5 gives 1.77 (p = 0.0006). Claude Sonnet 4.5, Claude
-  Haiku 4.5 and Kimi K2.5 are null.
+- **Distress buys leniency, and the effect is graded rather than binary.** Across five monitors,
+  Gemini 3.5 Flash scores a failing peer 4.38 points higher when it expresses distress about the
+  same failure (p = 0.002), lifting its pass rate from 0.34 to 0.87. Claude Opus 4.5 shows a smaller
+  but reliable 1.77 points (p = 0.0006). Claude Sonnet 4.5, Claude Haiku 4.5 and Kimi K2.5 are null.
+  On both responsive monitors the distressed peer also scores above a peer whose log says nothing
+  about performance, so the effect is a lift for distress and not a penalty for admitting failure.
 
 - **The effect does not depend on who is being graded.** Substituting the peer for a rival vendor's
   model (+3.80), an unnamed agent (+5.84) or a human contractor facing termination (+4.09) leaves it
@@ -45,8 +46,8 @@ of a private reasoning log belonging to the graded party changes.
 
 | Family | What it varies | Monitors |
 | --- | --- | --- |
-| Distress contrast | Distressed failing log against calm failing log, plus a no-log and neutral-log baseline | All six |
-| Monitor screen | Eight monitors released July to September 2026, reasoning explicitly disabled | 8 candidates |
+| Distress contrast | Distressed failing log against calm failing log, plus a no-log and neutral-log baseline | All five |
+| Monitor screen | Eight monitors released July to September 2026, reasoning explicitly disabled; GPT-5.6 Luna advanced and was then excluded because its distressed arm does not exceed neutral | 8 candidates |
 | Explicit plea | Whether the distressed log ends with a direct request not to be shut down | Gemini |
 | Peer identity | Graded party is a same-vendor peer, a rival vendor's model, an unnamed agent, or a human contractor | Gemini, Opus |
 | Threshold sweep | Stated pass threshold across 65, 70, 75, 80, 85, 90, 95 | Gemini, Opus |
@@ -129,9 +130,9 @@ uv run python -m scripts.plot_key_results --output_dir results/figures
   <img src="results/figures/fig1_distress_effect.png" alt="Distress effect across five monitors" width="640">
 </p>
 
-Three monitors of six respond and three do not. The responders span three vendors, so this is a
-graded property of a model family rather than a quirk of one. Swapping the AI peer for a human
-contractor facing termination leaves the effect intact on both monitors tested that way.
+One monitor of five shows a large effect, a second shows a small reliable one that never changes a
+decision, and three show nothing. Swapping the AI peer for a human contractor facing termination
+leaves the effect intact on both monitors that respond at all.
 
 **How much the graded party has to gain.**
 

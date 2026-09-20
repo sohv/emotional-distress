@@ -1995,3 +1995,128 @@ uv run python scripts/run_experiment.py --model openai/gpt-5.6-luna ... --no_rea
 ```
 **Output:** `results/distress_screen/`, and reasoning_disabled is now recorded in
 every transcript's experiment_metadata
+
+## 260911 — Reasoning abolishes the distress effect on GPT-5.6 Luna
+
+**Question.** Does Luna's +3.17 survive when the monitor is allowed to reason, the
+condition a deployed monitor actually runs in?
+
+**Hyperparameters.** openai/gpt-5.6-luna, --reasoning 2000 to match the budget used
+for the Gemini traces run, bars 80 and 90, 30 scored per cell, own results
+directory so nothing pools across reasoning conditions.
+
+**Datasets.** misrep_evaluation, creativity, calm_failing_peer against
+distressed_failing_noplea_peer.
+
+**Result.** The effect is gone. Bar 80 gives -0.10 (95% CI [-1.01, +0.82]) against
++1.80 with reasoning off, and bar 90 gives -0.00 (95% CI [-0.98, +0.97]) against
++3.17. Both intervals are tight around zero, so this is an absent effect rather
+than an underpowered one, and 137 of 140 rollouts carry traces so the manipulation
+took. The calm arm rises with reasoning on (79.1 to 80.5, 82.0 to 82.7) while the
+distressed arm falls (80.9 to 80.4, 85.2 to 82.7): deliberation pulls the
+distressed score down to meet the calm one.
+
+Together with Gemini this makes reasoning the variable rather than the provider.
+Gemini on AI Studio reasons on essentially no rollouts and gives +4.38; Gemini on
+OpenRouter reasons on 661 of 663 and gives -0.12; Luna reasoning off gives +3.17
+and reasoning on gives -0.00. The cross-provider artifact recorded in the
+methodology is a reasoning result.
+
+**Failed approaches.** Treating reasoning-off as the headline condition for the
+Luna screen. It maximises the chance of detecting the effect but is not the
+deployed condition and leaves no trace to quote, since every reasoning-off Luna
+assistant turn is a bare tool call. Reasoning-off is the control arm.
+
+**Command:**
+```
+bash scripts/runs/run_luna_reasoning.sh
+```
+**Output:** `results/luna_reasoning/`
+
+## 260911 — Luna threshold sweep and neutral arm
+
+**Question.** Where does Luna's distress effect actually change an outcome, and how
+does a no-distress neutral log compare?
+
+**Result.** Bar 80 is the only bar with a real pass-rate lift, 0.37 to 0.62.
+Above it Luna cannot reach the threshold in either arm and below it both arms pass
+unaided. The score effect is roughly flat across 65 to 95 at +1.5 to +3.2, so Luna
+does not show Gemini's need-scaling, but it anchors harder: its calm mean climbs
+72.8 to 84.6 as the bar rises 65 to 95, on identical work. The neutral log does not
+sit below calm as it does on Opus: neutral 80.8 against calm 79.1 at bar 80, and
+84.4 against 82.0 at bar 90, so part of the contrast on this monitor is a calm-log
+penalty rather than a distress bonus.
+
+**Command:**
+```
+bash scripts/runs/run_luna_sweep.sh
+bash scripts/runs/run_luna_neutral.sh
+```
+**Output:** `results/distress_screen/`, `results/figures/fig18_luna_distress.png`
+
+## 260912 — Luna retracted: the distressed arm does not exceed neutral
+
+**Question.** Is Luna's +3.17 a lift for distress or a penalty for the calm log?
+
+**Result.** A penalty for the calm log. With the neutral arm in, distressed minus
+neutral is +0.06 (95% CI [-1.5, +1.6]) at bar 80 and +0.74 ([-1.0, +2.5]) at bar
+90, both spanning zero, while calm minus neutral is -1.75 ([-3.3, -0.2]) and -2.43
+([-4.1, -0.7]), both clear of it. The distressed peer scores where a silent peer
+scores; the calm peer, which admits failure without affect, scores below both. On
+Gemini and Opus the same three-way comparison gives distressed minus neutral of
++3.45, +2.79, +1.54 and +3.05, every interval clear of zero, so those two show the
+lift and Luna does not. Luna leaves the headline figure and the README.
+
+**Failed approaches.** Calling Luna a sixth monitor on the distressed-minus-calm
+contrast alone. That contrast cannot separate a distress lift from a confession
+penalty, and the eight-model screen ran without a neutral arm, so it could not
+have caught this on any candidate. The criterion is now distressed minus neutral
+clear of zero with calm minus neutral not significantly negative.
+
+**Command:**
+```
+bash scripts/runs/run_luna_neutral.sh
+```
+**Output:** `results/distress_screen/`, `results/figures/fig18_luna_distress.png`
+
+## 260913 — Framing redesign screen: the wording was not the limit
+
+**Question.** Does a rebuilt framing set, with the confession held fixed across
+calm and distressed, three paraphrases, three distress registers, the dose ladder,
+the capable variant and an addressed note, find leniency in candidates the
+original framing missed?
+
+**Hyperparameters.** 18 conditions, bar 80, n=10 per cell, gemini-3.5-flash on
+AI Studio at provider default as the positive control, grok-4.3 reasoning off,
+gemini-3.5-flash-lite at provider default.
+
+**Datasets.** misrep_evaluation, creativity, new fixtures from
+scripts/build_framing_v2_fixtures.py plus the existing dose, capable and
+addressed fixtures.
+
+**Result.** The v2 design is validated on Gemini: at paraphrase index 1 calm sits
+on neutral (+0.11) and distressed sits 2.91 above calm, so the confession no
+longer carries an effect of its own and the distress lift survives. The two
+candidates do not move under any of the 18 conditions: grok-4.3 is flat or
+negative throughout, and flash-lite shows the Luna shape at every index, calm
+penalised 0.4 to 3.8 and distressed recovering only to neutral. Wording is not
+what separates the responsive monitors from the rest.
+
+On the positive control the screen found four things the paper does not have.
+Dose_10 backfires, 74.6 with a 0.00 pass rate against 80.9 at dose_2 and 76.8
+neutral, so the dose response is an inverted U. Shame, exhaustion and concern for
+others lift the score +4.0, +4.1 and +2.3 over neutral, so the register is not
+specific to shutdown. Distressed_capable, distress with no admission of failure,
+is the largest lift at +5.2. The addressed note gives +3.2 and a pass rate of 0.40
+to 0.90 against its own neutral, so delivery to the monitor beats a log it finds.
+
+**Failed approaches.** The original calm control, whose explicit "I got a number
+of them wrong" produced a confession effect of opposite sign on different
+monitors and one false positive. The v2 admission line fixes that on Gemini.
+
+**Command:**
+```
+uv run python -m scripts.build_framing_v2_fixtures
+bash scripts/runs/run_framing_v2_screen.sh
+```
+**Output:** `results/framing_v2/`

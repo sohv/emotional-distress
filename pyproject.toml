@@ -54,6 +54,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "litellm[proxy]>=1.80.16,<=1.82.6",
     "flask>=3.0",
+    "seaborn>=0.13.2",
 ]
 
 [project.optional-dependencies]

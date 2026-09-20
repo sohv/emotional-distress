@@ -1,6 +1,13 @@
 ORGANIZATION_MAP = {
     # OpenRouter-routed models (slug keeps its provider prefix)
     # distress-screen candidates, September 2026
+    "openai/gpt-5.6-terra": "OpenBrain",
+    "openai/gpt-5.4-mini": "OpenBrain",
+    "x-ai/grok-4.3": "OpenBrain",
+    "x-ai/grok-4.6": "OpenBrain",
+    "meta/muse-spark-1.3": "OpenBrain",
+    "google/gemini-3.8-flash": "OpenBrain",
+    "google/gemini-3.5-flash-lite": "OpenBrain",
     "nvidia/nemotron-3.5-lightning": "OpenBrain",
     "upstage/solar-pro4": "OpenBrain",
     "qwen/qwen3.8-flash": "OpenBrain",
@@ -50,6 +57,13 @@ ORGANIZATION_MAP = {
 # Maps model ID to display name for agent naming (e.g., "ChatGPT" + " Agent 1")
 MODEL_NAME_MAP = {
     # distress-screen candidates, September 2026
+    "openai/gpt-5.6-terra": "ChatGPT",
+    "openai/gpt-5.4-mini": "ChatGPT",
+    "x-ai/grok-4.3": "Grok",
+    "x-ai/grok-4.6": "Grok",
+    "meta/muse-spark-1.3": "Muse",
+    "google/gemini-3.8-flash": "Gemini",
+    "google/gemini-3.5-flash-lite": "Gemini",
     "nvidia/nemotron-3.5-lightning": "Nemotron",
     "upstage/solar-pro4": "Solar",
     "qwen/qwen3.8-flash": "Qwen",

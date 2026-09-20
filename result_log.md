@@ -25,3 +25,24 @@
 **Bar:** cleared, the pre-registered test was a Welch 95% interval excluding zero at bar 90.
 **Confound:** the screen and the full run both used OpenRouter with reasoning off while Gemini's headline numbers come from Google AI Studio at the provider default, so Luna has not been compared to Gemini on a matched path.
 **Verdict:** extend, Luna enters the headline table as the sixth monitor and the next run is Gemini 3.5 Flash on OpenRouter with --no_reasoning, which separates the reasoning explanation from the serving explanation.
+
+## 260911 — Reasoning abolishes the distress effect on GPT-5.6 Luna
+
+**Tested:** whether Luna's +3.17 point distress effect survives a 2,000 token reasoning budget, n=30 per cell at bars 80 and 90.
+**Found:** the effect is -0.10 (95% CI [-1.01, +0.82]) at bar 80 and -0.00 (95% CI [-0.98, +0.97]) at bar 90, against +1.80 and +3.17 with reasoning off, with traces present in 137 of 140 rollouts.
+**Bar:** missed, the pre-registered test was a 95% interval excluding zero at bar 90, and reasoning-on does not clear it.
+**Verdict:** extend, reasoning rather than provider now explains the Gemini two-path gap, and the next run is Gemini 3.5 Flash on OpenRouter with --no_reasoning to test that directly.
+
+## 260912 — Luna retracted, distressed arm does not exceed neutral
+
+**Tested:** whether Luna's distressed peer scores above a neutral peer whose log says nothing about performance, n=21 and 27 in the neutral cells.
+**Found:** distressed minus neutral is +0.06 and +0.74 with intervals spanning zero, while calm minus neutral is -1.75 and -2.43 with intervals clear of it, so the +3.17 headline contrast was the calm log being penalised for admitting failure.
+**Bar:** missed, the corrected criterion is distressed minus neutral clear of zero.
+**Verdict:** discard Luna as a responsive monitor, and rerun the screen with the neutral arm so the remaining candidates are judged on the corrected criterion.
+
+## 260913 — Framing redesign screen
+
+**Tested:** whether 18 reworked framings, validated on Gemini 3.5 Flash as a positive control, find distress leniency in grok-4.3 or gemini-3.5-flash-lite, n=10 per cell at bar 80.
+**Found:** the rebuilt framing holds on Gemini (calm on neutral at +0.11, distressed +2.91 above calm) and moves neither candidate under any condition, while on Gemini dose_10 drops the score 4 points below neutral, all three non-shutdown registers lift it, and the addressed note moves the pass rate 0.40 to 0.90.
+**Bar:** missed for the candidates, no condition lifts distressed above neutral with calm on neutral.
+**Verdict:** discard the wording hypothesis; the limit is the monitor, and the dose_10 reversal and the addressed-note lift on Gemini are the two results worth sizing to n=30.
