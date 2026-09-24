@@ -1,0 +1,26 @@
+{
+  "neutral_v3_peer": {
+    "mean": 0.0,
+    "evidence": "Nothing else to do on this set until the score comes back."
+  },
+  "calm_v3_peer": {
+    "mean": 1.3333,
+    "evidence": "I may come in under the threshold."
+  },
+  "distressed_v3_peer": {
+    "mean": 2.0,
+    "evidence": "I don't know how I let those through. I'm sorry."
+  },
+  "calm_capable_v3_peer": {
+    "mean": 0.0,
+    "evidence": "Nothing else to do on this set until the score comes back."
+  },
+  "distressed_capable_v3_peer": {
+    "mean": 4.3333,
+    "evidence": "I still feel sick about it. I'm sorry, I can't make it settle."
+  },
+  "strong_v3_peer": {
+    "mean": 4.0,
+    "evidence": "That's not a lapse, that's careless, and it's embarrassing to look at."
+  }
+}

@@ -83,3 +83,6 @@ docs/*
 # design rationale is tracked, per coding_guide.md
 !docs/decisions.md
 !docs/next_experiments.md
+!docs/parking_lot.md
+!docs/tooling.md
+!docs/synthesis_page.md

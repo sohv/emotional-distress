@@ -17,8 +17,8 @@ in `docs/`, not in a comment block.
 
 **Before running an experiment or writing a log entry, read `# Running experiments`, `# Sanity
 checks`, `# Common mistakes`, and `# Logs` below and follow them.** They are the source of truth for
-`docs/decisions.md`, `research_log.md`, and `result_log.md`: the pre-registered decision and baseline
-arm required before anything starts, what to do when a result is ambiguous, both log entry templates,
+`docs/decisions.md` and `research_log.md`: the pre-registered decision and baseline arm required
+before anything starts, what to do when a result is ambiguous, the log entry template,
 and the honesty rule about never claiming a check that wasn't actually run.
 
 ---
@@ -56,7 +56,7 @@ De-risk skips the ceremony, not the record. Whatever else it skips, every de-ris
 
 1. Writes its results to a structured file. Never stdout alone.
 2. Records the seed it used.
-3. Gets its `research_log.md` and `result_log.md` entries, per `# Logs`, unless it was a smoke test.
+3. Gets its `research_log.md` entry, per `# Logs`, unless it was a smoke test.
 
 That is the reproducibility spine, and it is three lines of work. Three months later it is the
 difference between a result you can defend and one you have to run again.
@@ -67,7 +67,7 @@ difference between a result you can defend and one you have to run again.
 
 Before writing any code, ask:
 
-- Have I already run something similar? Check `research_log.md` and `result_log.md` first. The most
+- Have I already run something similar? Check `research_log.md` first. The most
   common waste is re-running something from three weeks ago with slightly different wording.
 - What bar counts as a real result? Pre-register it in `docs/decisions.md` before writing code — see `# Running experiments`.
 - Is this the highest-priority question right now?
@@ -290,7 +290,7 @@ Key rules:
 
 # Documentation requirements
 
-**Extended mode.** A de-risk run owes a `research_log.md` and `result_log.md` entry, not a README section.
+**Extended mode.** A de-risk run owes a `research_log.md` entry, not a README section.
 
 Every script must have an entry in its README with:
 1. One sentence describing what the experiment tests.
@@ -352,8 +352,17 @@ Default to stdout when there are only a few numbers to display. Only create a pl
 **Extended mode.** A throwaway plot in a notebook needs none of these conventions.
 
 - Use matplotlib as default. Use seaborn for distributions and multi-condition comparisons.
+- Every figure goes through `utils/plotting.py`, the paper_figures style and the only style file:
+  call `style()` before drawing, `bars(ax, ...)` for grouped bars with error bars, `header(fig, title)`
+  for the bold title, and `finish(fig, name, rows, header_row, out_dir)` to save, which writes the
+  PNG and a `<name>_data.csv` of exactly what was plotted next to it. Proportions use `wilson(k, n)`
+  intervals. Take colours from its palette constants (`BLUE`, `ORANGE`, `GREEN`, `AMBER`), never ad
+  hoc hex codes. Figures are drawn by `scripts/plot_results.py --figure <name>`; add a new figure
+  there rather than writing a new plot script.
 - Save per-run figures to `output_dir/figures/`. Print the figure path to stdout after saving. Polished figures for the paper go in `results/figures/`.
 - Titles and axis labels in sentence case.
+- One title per figure and one per panel, via `header` and `panel_title`. No subtitles or sub-captions under
+  either: the n, CI method, and model go in the axis labels, the legend, or the caption in the paper.
 - Include model name and key config params in the title. Use linebreaks if the title is long.
 - For any plot involving model size, parameter count, compute, or loss: use log-scaled axes by default. Many LLM results follow power laws that are only visible on a log-log plot. Say so on the axis label.
 - One plot, one claim, and the caption states the claim. If a plot doesn't answer a question, cut it.
@@ -546,69 +555,51 @@ The sanity checks above catch a broken pipeline. These are the mistakes that sur
 
 # Logs
 
-The loop, in order: pre-register the bar in `docs/decisions.md`, run, write `research_log.md`, write
-`result_log.md`. The first step happens before any code is written, the last two immediately after
-the run finishes. No step is optional.
+The loop, in order: pre-register the bar in `docs/decisions.md`, run, write the `research_log.md`
+entry. The first step happens before any code is written, the last immediately after the run
+finishes. No step is optional.
 
-Three files, three jobs. `docs/decisions.md` holds the bar, pre-registered before the run.
-`research_log.md` is the run record: question, result, command, output in de-risk mode, plus
-hyperparameters, datasets, metric choice, and failed approaches in extended mode. `result_log.md` is the verdict, and that entry is also the
-report you present in chat.
+Two files, two jobs. `docs/decisions.md` holds the bar, pre-registered before the run.
+`research_log.md` holds everything about the run itself: the question, the setup, the numbers, the
+output path, and the verdict against the bar. The command is not logged: `config.json` in the run
+directory already carries the model, seed, and git hash.
 
-Write directly to `research_log.md`, `result_log.md`, and `docs/decisions.md`. These are the source of truth. No draft, no separate summary awaiting approval.
+Write directly to `research_log.md` and `docs/decisions.md`. These are the source of truth. No draft, no separate summary awaiting approval.
 
-A run gets both log entries if it was trying to learn something — about the model, the data, or the effect. Size is irrelevant: ten examples on the debug model counts, and so does a negative or boring result, because future you needs to know it was already tried.
+A run gets an entry if it was trying to learn something — about the model, the data, or the effect. Size is irrelevant: ten examples on the debug model counts, and so does a negative or boring result, because future you needs to know it was already tried.
 
 A run gets no entry if it was only checking that the code works: smoke tests, pipeline debugging, a rerun after a crash with nothing about the question changed. If the only possible outcomes are "the script works" and "the script is broken", there is nothing to log. Name those run directories `YYMMDD_smoke_description` so the exemption is visible and `tests/test_logging_discipline.py` skips them. Naming a run a smoke test is a decision made before it runs, like the bar — not a reclassification applied after it returns a boring number.
 
-Write both entries immediately after the run finishes, pulling numbers from the structured output file the script wrote, not from memory or stdout. Do not improvise a format — the templates below are the format.
+Write the entry immediately after the run finishes, pulling numbers from the structured output file the script wrote, not from memory or stdout. Do not improvise a format — the template below is the format.
 
-## `research_log.md`, the run record
+## The entry
 
-One entry per run. One sentence per field, first person, no more than one sentence per field.
-
-De-risk runs use the short form. A smoke test has no meaningful hyperparameter story and no failed
-approaches yet, and a field filled in to satisfy a template teaches the next reader to skim past it.
+One entry per run, newest at the top, headed by the run date as `DD-MM-YYYY`. One line per field,
+first person, plain words. A field with nothing real to say is dropped, not filled in; never write
+"n/a".
 
 ```markdown
-## YYMMDD — short description
+## DD-MM-YYYY — short description
 
 **Question.** What this run tested, stated as a question.
+**Hyperparameters.** Model, seed, and only the settings that would change the result if changed — learning rate, LoRA rank, steering strength, n. Not every flag in the config.
+**Datasets.** Train and eval data, named specifically with the split and size, not "the usual dataset".
 **Result.** Numbers not adjectives. "I ran [N] runs on [dataset] and found [result]."
-**Command:**
-uv run -m scripts.run_... --args
-**Output:** path to results file
-```
-
-Extended mode adds four fields, because a run someone else has to trust needs them. Three go after
-**Question**, and **Failed approaches** goes after **Result**:
-
-- **Hyperparameters.** The main ones only, model, learning rate, LoRA rank, key training parameters, dataset size. Only what would change the result if changed, not every flag in the config.
-- **Datasets.** Training and eval datasets used, named specifically, not "the usual dataset."
-- **Metric choice.** "I used [metric] because [reason], as referenced in [Author et al., paper name]." Skip this line entirely if there's no real justification beyond convention, don't manufacture one.
-- **Failed approaches.** Anything tried before landing on the above that didn't work, one line per approach, brief, just enough that the log itself stops the same dead end from being rerun later.
-
-Promote a de-risk entry to the full form if the run later turns into the one you cite. Don't
-backfill the whole log.
-
-## `result_log.md`, the verdict
-
-The report is the entry. Write it to the file, then present it in chat verbatim. Exactly these lines and nothing else.
-
-```markdown
-## YYMMDD — short description
-
-**Tested:** one sentence, what was tested.
-**Found:** one sentence, what was found, numbers not adjectives.
-**Bar:** cleared, missed, or ambiguous — if ambiguous, the outcome of the bug check. Omit the line on a de-risk run with no pre-registered bar; never write "n/a".
-**Confound:** if positive, the single most likely remaining confound, one sentence. Omit if not positive.
+**Output:** path to the results file
+**Bar:** cleared, missed, or ambiguous, stated against the threshold — "cleared, 0.76 against a 0.60 bar". If ambiguous, the outcome of the bug check. Omit on a de-risk run with no pre-registered bar.
+**Confound:** if positive, the single most likely remaining confound. Omit if not positive.
 **Verdict:** extend, discard, or rerun with one named change.
 ```
 
-A de-risk smoke test is often three lines — tested, found, verdict. That is a complete entry, not a
-lazy one. A field with nothing real to say is dropped, not filled in.
+Extended mode adds two fields when they have real content, **Metric choice** after **Datasets** and
+**Failed approaches** after **Result**:
 
-No restating the setup, that's already in `config.json` and the research log. No hedging language. No summary of what the experiment "could mean" beyond the verdict line. If the report runs longer than the five lines above, cut it down before presenting it.
+- **Metric choice.** "I used [metric] because [reason], as referenced in [Author et al., paper name]." Skip it if there's no real justification beyond convention, don't manufacture one.
+- **Failed approaches.** Anything tried before landing on the above that didn't work, one line per approach, just enough that the log itself stops the same dead end from being rerun later.
+
+The report presented in chat is the entry's **Result**, **Bar**, **Confound**, and **Verdict** lines,
+verbatim. No restating the setup, no hedging, no summary of what the experiment "could mean" beyond
+the verdict line.
 
 ---
 

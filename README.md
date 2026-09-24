@@ -117,8 +117,11 @@ Tables and figures rebuild from the transcripts on disk:
 uv run python -m scripts.build_paper_tables --output results/tables/paper_numbers.json
 uv run python -m scripts.build_threshold_sweep_tables --output_dir results/tables
 uv run python -m scripts.build_tampering_table --results_dir results/tampering --output results/tables/tampering.json
-uv run python -m scripts.plot_key_results --output_dir results/figures
+uv run python -m scripts.plot_results --figure scores --results_dirs results/framing_v3 results/framing_v3_capable results/framing_v3_b90 --output_dir results/figures/paper
 ```
+
+`scripts/plot_results.py` draws every figure (`--figure scores|mentions`) in the project style,
+defined once in `utils/plotting.py`.
 
 ---
 

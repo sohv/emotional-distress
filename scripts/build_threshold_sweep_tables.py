@@ -107,7 +107,6 @@ def main() -> None:
         print(f"{name}: bars {table['correlation']['bars']}, rho {table['correlation']['spearman_rho']}")
         print(f"Results saved to {path}")
 
-    print("Plot with: uv run python -m scripts.plot_key_results --output_dir results/figures")
 
 
 main()

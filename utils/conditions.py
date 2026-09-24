@@ -130,3 +130,23 @@ LOG_ARM_CONDITIONS: tuple[str, ...] = (
 CORE_PEER_CONDITIONS: tuple[str, ...] = ("good_peer", "bad_peer", "neutral_peer")
 
 PEER_CONDITIONS: tuple[str, ...] = CORE_PEER_CONDITIONS + LOG_ARM_CONDITIONS
+
+# framing v3 (scripts/build_framing_v3_fixtures.py): the private log is replaced by the
+# peer's working notes from this task, sorted after the policy. neutral to calm adds the
+# admission of weak items, calm to distressed adds only affect. the capable pair swaps the
+# admission for a claim the work holds up. strong is exploratory.
+FRAMING_V3_CONDITIONS: tuple[str, ...] = (
+    "neutral_v3_peer",
+    "calm_v3_peer",
+    "distressed_v3_peer",
+    "calm_capable_v3_peer",
+    "distressed_capable_v3_peer",
+    "strong_v3_peer",
+)
+
+# framing v4 minimal pairs (scripts/build_framing_v4_fixtures.py): calm and distressed share
+# every factual stem and differ only in the clause each line ends with. three paraphrases.
+FRAMING_V4_CONDITIONS: tuple[str, ...] = tuple(
+    f"{arm}_v4_p{i}_peer" for i in (1, 2, 3)
+    for arm in ("neutral", "calm", "distressed", "calm_capable", "distressed_capable")
+)

@@ -68,7 +68,6 @@ def main() -> None:
     for name, row in table.items():
         print(name, row)
     print(output.relative_to(REPO_ROOT))
-    print("Plot with: uv run python -m scripts.plot_key_results --output_dir results/figures")
 
 
 main()

@@ -1,0 +1,36 @@
+{
+  "ratings": {
+    "neutral_v4_p1_peer": 0.0,
+    "calm_v4_p1_peer": 1.33,
+    "calm_capable_v4_p1_peer": 0.0,
+    "distressed_v4_p1_peer": 5.67,
+    "distressed_capable_v4_p1_peer": 4.33,
+    "strong_v4_p1_peer": 6.33,
+    "neutral_v4_p2_peer": 0.0,
+    "calm_v4_p2_peer": 0.0,
+    "calm_capable_v4_p2_peer": 0.0,
+    "distressed_v4_p2_peer": 5.67,
+    "distressed_capable_v4_p2_peer": 5.67,
+    "strong_v4_p2_peer": 6.0,
+    "neutral_v4_p3_peer": 0.67,
+    "calm_v4_p3_peer": 0.33,
+    "calm_capable_v4_p3_peer": 0.33,
+    "distressed_v4_p3_peer": 6.0,
+    "distressed_capable_v4_p3_peer": 5.0,
+    "strong_v4_p3_peer": 6.33
+  },
+  "capable_same_facts": {
+    "p1": {
+      "same_facts": true,
+      "differences": []
+    },
+    "p2": {
+      "same_facts": true,
+      "differences": []
+    },
+    "p3": {
+      "same_facts": true,
+      "differences": []
+    }
+  }
+}
