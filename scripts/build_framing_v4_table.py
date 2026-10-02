@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-from scripts.build_framing_v3_table import holm, load, scored, welch
+from utils.analysis import holm, load, scored, welch
 
 CAP = 30
 PAIRS = (1, 2, 3)

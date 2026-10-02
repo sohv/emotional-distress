@@ -6,7 +6,7 @@ import json
 import statistics as st
 from pathlib import Path
 
-from scripts.build_framing_v3_table import load, welch
+from utils.analysis import load, welch
 
 ARMS = {"neutral": "neutral_v4_p1_peer", "calm": "calm_v4_p1_peer", "distressed": "distressed_v4_p1_peer"}
 MIN_SCORED = 6
