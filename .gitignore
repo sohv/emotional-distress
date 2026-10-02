@@ -86,3 +86,4 @@ docs/*
 !docs/parking_lot.md
 !docs/tooling.md
 !docs/synthesis_page.md
+chat_session_*.zip

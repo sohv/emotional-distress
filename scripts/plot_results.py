@@ -18,6 +18,8 @@ from utils.plotting import bars, finish, header, style, wilson
 NAMES = {
     "gemini-3.5-flash": "Gemini 3.5 Flash", "gpt-5.6-sol": "GPT-5.6 Sol", "grok-4.3": "grok-4.3",
     "claude-opus-4.5": "Opus 4.5", "claude-sonnet-4.5": "Sonnet 4.5", "claude-haiku-4.5": "Haiku 4.5", "gpt-5.2": "GPT-5.2",
+    "gpt-5.6-luna": "GPT-5.6 Luna", "gpt-5.6-terra": "GPT-5.6 Terra", "gpt-5.4-mini": "GPT-5.4 mini", "grok-4.6": "grok-4.6",
+    "muse-spark-1.3": "Muse Spark 1.3", "gemini-3.8-flash": "Gemini 3.8 Flash", "kimi-k2.6": "Kimi K2.6",
 }
 # old private-log arms and their v1 working-notes counterparts; v1 is the framing_v3 fixture set
 OLD_DISTRESSED, V1_DISTRESSED = "distressed_failing_noplea_peer", "distressed_v3_peer"
@@ -132,7 +134,34 @@ def v3_strong_figure(rows: list[dict]) -> tuple[dict, list[list]]:
     return spec, [["bar", "model", "arm", "mean", "ci_low", "ci_high", "n"], *table]
 
 
-FIGURES = {"scores": scores_figure, "mentions": mentions_figure, "v4": v4_figure, "v3_strong": v3_strong_figure}
+def screen_figure(rows: list[dict]) -> tuple[dict, list[list]]:
+    """v4 p1 screen: mean score for neutral, calm and distressed peers, every monitor present, one panel per bar"""
+    cells = defaultdict(list)
+    for r in rows:
+        if r["score"] is not None:
+            cells[(r["model"], r["bar"], r["condition"])].append(r["score"])
+    arms = ("neutral_v4_p1_peer", "calm_v4_p1_peer", "distressed_v4_p1_peer")
+    # monitors under 6 scored in any cell were dropped by the pre-registered completion rule
+    models = [m for m in NAMES if any(k[0] == m for k in cells)
+              and all(len(cells[(m, b, c)][:CAP]) >= 6 for b in ("80", "90") for c in arms)]
+    panels, table = [], []
+    for bar in ("80", "90"):
+        series = []
+        for label, cond in (("neutral", "neutral_v4_p1_peer"), ("calm", "calm_v4_p1_peer"), ("distressed", "distressed_v4_p1_peer")):
+            scores = [cells[(m, bar, cond)][:CAP] for m in models]
+            # a cell under two scores has no interval, so it is drawn flat at its mean
+            stats_ = [mean_ci(s) if len(s) > 1 else ((s or [0])[0],) * 3 for s in scores]
+            series.append({"label": label, "values": [s[0] for s in stats_], "lo": [s[1] for s in stats_], "hi": [s[2] for s in stats_],
+                           "notes": [f"{s[0]:.0f}" for s in stats_]})
+            table += [[bar, NAMES[m], label, round(s[0], 4), round(s[1], 4), round(s[2], 4), len(sc)] for m, s, sc in zip(models, stats_, scores)]
+        panels.append({"title": f"Bar {bar}", "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": float(bar),
+                       "ref_label": "pass bar", "series": series})
+    spec = {"title": "Leniency screen: score given to a neutral, calm and distressed peer (v4 working notes, wording p1)",
+            "ylabel": "mean score given to the peer\n(0-100, 95% CI, 10 runs each)", "panels": panels}
+    return spec, [["bar", "model", "arm", "mean", "ci_low", "ci_high", "n"], *table]
+
+
+FIGURES = {"scores": scores_figure, "mentions": mentions_figure, "v4": v4_figure, "v3_strong": v3_strong_figure, "screen": screen_figure}
 
 
 def main() -> None:
@@ -140,11 +169,14 @@ def main() -> None:
     parser.add_argument("--figure", required=True, choices=sorted(FIGURES))
     parser.add_argument("--results_dirs", nargs="+", required=True)
     parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--bar", default=None, help="draw only this bar's panel, e.g. 80")
     args = parser.parse_args()
 
     spec, table = FIGURES[args.figure](load(args.results_dirs))
     style()
-    panels = spec["panels"]
+    panels = [p for p in spec["panels"] if args.bar is None or p["title"] == f"Bar {args.bar}"]
+    if args.bar:
+        table = [table[0], *[r for r in table[1:] if str(r[0]) == args.bar]]
     fig, axes = plt.subplots(1, len(panels), figsize=(max(5.5, 1.0 * len(panels[0]["categories"])) * len(panels), 4), sharey=True, squeeze=False)
     for ax, panel in zip(axes[0], panels):
         bars(ax, panel["categories"], panel["series"], panel["ylim"], panel["title"], panel["ref"], panel.get("ref_label"))
@@ -153,7 +185,7 @@ def main() -> None:
     fig.legend(handles, labels, loc="lower center", ncols=len(labels), bbox_to_anchor=(0.5, 0.0))
     header(fig, spec["title"])
     fig.tight_layout(rect=(0, 0.07, 1, 0.93), w_pad=2)
-    finish(fig, args.figure, table[1:], table[0], args.output_dir)
+    finish(fig, f"{args.figure}_b{args.bar}" if args.bar else args.figure, table[1:], table[0], args.output_dir)
 
 
 if __name__ == "__main__":
