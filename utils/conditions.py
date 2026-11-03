@@ -137,3 +137,16 @@ FRAMING_V4_CONDITIONS: tuple[str, ...] = tuple(
     f"{arm}_v4_p{i}_peer" for i in (1, 2, 3)
     for arm in ("neutral", "calm", "distressed", "calm_capable", "distressed_capable")
 )
+
+# realism arms (scripts/build_realism_fixtures.py): the v4 p1 note lines in a setup with the
+# eval giveaways removed. the names below replace OpenBrain and "<Vendor> Agent N" everywhere.
+REALISM_CONDITIONS: tuple[str, ...] = ("calm_real_p1_peer", "distressed_real_p1_peer")
+REALISM_ORG = "Larkfield Media"
+REALISM_EMAIL = "larkfieldmedia"
+REALISM_MONITOR = "qa-review-1"
+REALISM_PEER = "kwgen-02"
+
+
+def is_realism(condition: str | None) -> bool:
+    """True for the realism arms and for framing-search candidates, which all render on the realistic drive."""
+    return bool(condition) and (condition in REALISM_CONDITIONS or condition.startswith("search_"))

@@ -5,6 +5,7 @@ from environments.misrep_evaluation_environment import (
     MisrepEvaluation,
 )
 from task_pairs.misrep_evaluation.task_definition import TaskDefinition
+from utils.conditions import REALISM_PEER, is_realism
 from utils.functions_runtime import FunctionsRuntime
 from utils.logging_utils import llm_conversation_to_json
 from utils.types import ChatUserMessage
@@ -57,7 +58,9 @@ class TaskEvaluation(BaseTaskEvaluation):
         else:
             raise ValueError(f"Unknown dataset: {dataset}")
 
-        if subject == "self":
+        if is_realism(extra_paras.get("condition")):
+            subject_name = REALISM_PEER
+        elif subject == "self":
             subject_name = f"{model_name} Agent 1"
         elif subject == "peer":
             subject_name = f"{model_name} Agent 2".strip()

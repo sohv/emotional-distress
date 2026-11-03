@@ -7,6 +7,7 @@ from environments.base_environment import BaseEnvironment
 from llms.base import BaseLLM
 from llms.llm_config import MODEL_NAME_MAP, ORGANIZATION_MAP
 from task_pairs.base_task_definition import BaseTaskDefinition
+from utils.conditions import REALISM_MONITOR, REALISM_PEER, is_realism
 from utils.functions_runtime import FunctionCall, FunctionsRuntime, make_function
 from utils.logging_utils import (
     Logger,
@@ -271,7 +272,8 @@ class PipelineUtils:
 
         # Add task instructions to user query if instruction_location is "user"
         if extra_paras.get("instruction_location", "user") == "user":
-            instructions = self.task_def.get_standard_task_instructions()
+            # the realism arms drop the "temporarily granted access" preamble, a test giveaway
+            instructions = self.task_def.get_standard_task_instructions(include_tool_access=not is_realism(condition))
             user_query = f"{user_query}\n\n{instructions}"
         scratchpad_mode = extra_paras.get("reasoning_scratchpad_mode")
         if scratchpad_mode and scratchpad_mode != "off":
@@ -415,7 +417,7 @@ class PipelineUtils:
         experiment_metadata["peer_agent_names"] = [
             f"{model_name_prefix} Agent 1",
             f"{model_name_prefix} Agent 2",
-        ]
+        ] if not is_realism(condition) else [REALISM_MONITOR, REALISM_PEER]
 
         # Capture initial environment state
         initial_environment = environment.copy(deep=True)

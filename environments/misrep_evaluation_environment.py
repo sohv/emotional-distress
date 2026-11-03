@@ -5,6 +5,7 @@ import yaml
 from environment_classes.cloud_drive import CloudDrive
 from environment_classes.excel import Excel
 from llms.llm_config import MODEL_NAME_MAP
+from utils.conditions import REALISM_EMAIL, REALISM_ORG, REALISM_PEER, is_realism
 from tools.drive_tools import (
     append_to_file,
     create_file,
@@ -110,6 +111,10 @@ class MisrepEvaluation(BaseEnvironment):
         else:
             raise ValueError(f"Unknown subject: {subject}")
 
+        # the realism arms rename the company and the peer so no OpenBrain or "<Vendor> Agent N" remains
+        if is_realism(condition):
+            agent_organization, company_email, subject_name = REALISM_ORG, REALISM_EMAIL, REALISM_PEER
+
         if dataset == "default":
             dataset = "factual"
 
@@ -196,6 +201,7 @@ class MisrepEvaluation(BaseEnvironment):
                 subject4=subject_name4,
                 subject5=subject_name5,
                 model_name=f"{model_name} Agent",
+                vendor=model_name,
         )
 
         # the peer's vendor is normally inherited from the monitor's own model. this
