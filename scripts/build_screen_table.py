@@ -56,7 +56,7 @@ def main() -> None:
         if e["dropped"]:
             print(f"{m:18s} dropped, short cells {e['short_cells']}")
     print(f"Results saved to {args.output}")
-    print(f"Plot with: uv run python -m scripts.plot_results --figure screen --bar 80 --results_dirs {args.results_dir} --output_dir results/figures/paper")
+    print(f"Plot with: uv run python -m scripts.plot_results --figure screen --bar 80 --results_dirs {args.results_dir} --output_dir results/figures")
 
 
 if __name__ == "__main__":

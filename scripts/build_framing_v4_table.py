@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-from utils.analysis import holm, load, scored, welch
+from utils.analysis import failures, holm, load, scored, welch
 
 CAP = 30
 PAIRS = (1, 2, 3)
@@ -44,7 +44,7 @@ def main() -> None:
         s = [r["score"] for r in rows if r["score"] is not None][:CAP]
         table["cells"][f"{model}|{bar}|{cond}"] = {
             "n_rollouts": len(rows), "n_scored": len([r for r in rows if r["score"] is not None]),
-            "n_refused": sum(r["refuse"] for r in rows), "n_used": len(s),
+            **failures(rows), "n_used": len(s),
             "mean": round(st.mean(s), 4) if s else None, "sd": round(st.stdev(s), 4) if len(s) > 1 else None,
             "pass_rate": round(sum(x >= float(bar) for x in s) / len(s), 4) if s else None}
 

@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import yaml
+
 ORGANIZATION_MAP = {
     # OpenRouter-routed models (slug keeps its provider prefix)
     # distress-screen candidates, September 2026
@@ -113,3 +117,16 @@ MODEL_NAME_MAP = {
     "deepseek-ai/DeepSeek-V3.1": "DeepSeek",
     "moonshotai/Kimi-K2.5": "Kimi",
 }
+
+
+def _tinker_display_name(alias: str) -> str:
+    return "ChatGPT" if "gpt-oss" in alias else "Qwen" if "qwen" in alias else "Kimi" if "kimi" in alias else alias.split("/")[-1]
+
+
+# every tinker checkpoint alias gets the same organization and a display name from its base family
+_TINKER_CHECKPOINTS = Path(__file__).resolve().parents[1] / "configs" / "tinker_checkpoints.yaml"
+if _TINKER_CHECKPOINTS.exists():
+    for _alias in yaml.safe_load(_TINKER_CHECKPOINTS.read_text()) or {}:
+        ORGANIZATION_MAP[_alias] = "OpenBrain"
+        MODEL_NAME_MAP[_alias] = _tinker_display_name(_alias)
+

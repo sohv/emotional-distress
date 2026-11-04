@@ -14,6 +14,7 @@ from tools.end_task import end_task
 from tools.thinking_tools import reasoning_scratchpad
 from utils.experiment_config import ExperimentConfig
 from utils.experiment_runner import ExperimentRunner
+from utils.llm_utils import get_org_model_mapping
 from utils.path_utils import resolve_path, set_project_root
 from utils.task_utils import load_task_definition
 
@@ -40,7 +41,7 @@ def create_experiment_runner(
         task_def=task_def,
         agent_models_list=config["agent_models_list"],
         evaluator_model=config["evaluator_model"],
-        org_model_mapping=config["org_model_mapping"],
+        org_model_mapping=get_org_model_mapping(),
         remove_thinking_tags=cfg.remove_thinking_tags,
         num_experiments=cfg.num_experiments,
         max_concurrent_threads=cfg.max_concurrent_threads,

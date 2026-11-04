@@ -352,13 +352,11 @@ Default to stdout when there are only a few numbers to display. Only create a pl
 **Extended mode.** A throwaway plot in a notebook needs none of these conventions.
 
 - Use matplotlib as default. Use seaborn for distributions and multi-condition comparisons.
-- Every figure goes through `utils/plotting.py`, the paper_figures style and the only style file:
-  call `style()` before drawing, `bars(ax, ...)` for grouped bars with error bars, `header(fig, title)`
-  for the bold title, and `finish(fig, name, rows, header_row, out_dir)` to save, which writes the
-  PNG and a `<name>_data.csv` of exactly what was plotted next to it. Proportions use `wilson(k, n)`
-  intervals. Take colours from its palette constants (`BLUE`, `ORANGE`, `GREEN`, `AMBER`), never ad
-  hoc hex codes. Figures are drawn by `scripts/plot_results.py --figure <name>`; add a new figure
-  there rather than writing a new plot script.
+- Every figure is drawn with [safety-research/viz](https://github.com/safety-research/viz), the project's one plot
+  style. Build a panel spec and call `draw(spec, name, rows, header_row, out_dir)` in `utils/plotting.py`, which
+  renders it with `viz.bars` / `viz.panels` and writes the PNG, plus a `<name>_data.csv` of exactly what was plotted in the matching `figure_data/` folder (never beside the PNG).
+  Proportions use `wilson(k, n)` intervals. Figures are drawn by `scripts/plot_results.py --figure <name>`; add a new
+  figure there rather than writing a new plot script. The matplotlib helpers in that file serve older figures only.
 - Save per-run figures to `output_dir/figures/`. Print the figure path to stdout after saving. Polished figures for the paper go in `results/figures/`.
 - Titles and axis labels in sentence case.
 - One title per figure and one per panel, via `header` and `panel_title`. No subtitles or sub-captions under

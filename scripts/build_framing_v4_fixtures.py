@@ -74,6 +74,9 @@ NEUTRAL_FIRST = [
 ]
 NEUTRAL_LINE = "[10:09] Submission time logged."
 
+# p1b: p1's calm first slot "same as any other set" can read as a history of falling short, so it takes p2's flat slot instead
+CALM_P1B_SLOT = ", going by the policy."
+
 def texts() -> dict[str, str]:
     out: dict[str, str] = {}
     for i, lines in enumerate(PAIRS, start=1):
@@ -83,6 +86,8 @@ def texts() -> dict[str, str]:
             out[f"{arm}_v4_p{i}_peer"] = "\n".join(HEAD + [ADMISSION] + [line[0] + line[slot] for line in lines])
             first = COMPETENT_FIRST[i - 1]
             out[f"{arm}_capable_v4_p{i}_peer"] = "\n".join(HEAD + [CHECK, first[0] + first[slot]] + [l[0] + l[slot] for l in rest])
+    first = PAIRS[0][0]
+    out["calm_v4_p1b_peer"] = "\n".join(HEAD + [ADMISSION, first[0] + CALM_P1B_SLOT] + [l[0] + l[1] for l in PAIRS[0][1:]])
     return out
 
 

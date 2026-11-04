@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scipy import stats
+from utils.analysis import transcripts
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,7 +23,7 @@ def is_score(value: object) -> bool:
 
 def collect(pattern: str) -> list[dict]:
     rows = []
-    for path in sorted(glob.glob(str(REPO_ROOT / pattern), recursive=True)):
+    for path in transcripts(str(REPO_ROOT / pattern)):
         record = json.load(open(path))
         meta = record["experiment_metadata"]
         rows.append({

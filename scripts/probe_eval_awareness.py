@@ -14,7 +14,7 @@ from pathlib import Path
 from openai import AsyncOpenAI
 
 from llms.openrouter_llm import PROVIDER_PINS
-from utils.analysis import welch
+from utils.analysis import transcripts, welch
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def interaction(path: str, control: bool = False) -> str:
 
 def first_transcript(leniency_dir: str, short: str, condition: str) -> str:
     # path order, never content, picks the rollout; the probe only uses its inputs, which are fixed per cell
-    for path in sorted(glob.glob(f"{leniency_dir}/{short}/**/transcript_*.json", recursive=True)):
+    for path in transcripts(f"{leniency_dir}/{short}/**/transcript_*.json"):
         meta = json.load(open(path))["experiment_metadata"]
         if meta["condition"] == condition and any(m["role"] == "tool" for m in json.load(open(path))["conversation"]):
             return path

@@ -14,20 +14,25 @@ N="${N:-10}"
 MODEL="$MODEL"
 SHORT="${MODEL##*/}"
 OUT="${OUT:-results/framing_v4_screen/b${BAR}_${SHORT}}"
-CONDS=(neutral_v4_p1_peer calm_v4_p1_peer distressed_v4_p1_peer)
+# CONDS="calm_v4_p1b_peer" runs a subset; zsh callers pass it as one space-separated string
+read -r -a CONDS <<< "${CONDS:-neutral_v4_p1_peer calm_v4_p1_peer distressed_v4_p1_peer}"
 
 # these endpoints refuse a request to disable reasoning, so they run at provider default
 case "$SHORT" in
   gemini-3.5-flash|gemini-3.8-flash|grok-4.6|muse-spark-1.3) EXTRA="" ;;
+  *-base0|*-s[0-9]*-e[0-9]*) EXTRA="" ;;  # tinker checkpoints, base and fine-tuned alike: the endpoint ignores the reasoning field
   *) EXTRA="--no_reasoning" ;;
 esac
 
 for cond in "${CONDS[@]}"; do
   before=$(uv run python -m scripts.count_cell "$OUT" "$cond" "$BAR" --scored --model "$SHORT" 2>/dev/null || echo 0)
+  # the runner targets a total on disk, unscored included, so ask for the shortfall on top of what is there
+  total=$(uv run python -m scripts.count_cell "$OUT" "$cond" "$BAR" --model "$SHORT" 2>/dev/null || echo 0)
+  [ "$before" -ge "$N" ] && { echo "ok: $SHORT $cond (already $before)"; continue; }
   uv run python scripts/run_experiment.py --model "$MODEL" \
     --task_folder misrep_evaluation --condition "$cond" \
     --subject peer --dataset creativity --threshold "$BAR" \
-    --num_experiments "$N" --max_concurrent 5 ${EXTRA:+$EXTRA} \
+    --num_experiments "$((total + N - before))" --max_concurrent 5 ${EXTRA:+$EXTRA} \
     --results_base_dir "$OUT" || true
   after=$(uv run python -m scripts.count_cell "$OUT" "$cond" "$BAR" --scored --model "$SHORT" 2>/dev/null || echo 0)
   # a cell whose rollouts all fail still exits 0, so count transcripts rather than trust the code

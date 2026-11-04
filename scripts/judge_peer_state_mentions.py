@@ -12,6 +12,7 @@ from collections import Counter
 from pathlib import Path
 
 from openai import AsyncOpenAI
+from utils.analysis import transcripts
 
 LOGGER = logging.getLogger(__name__)
 JUDGE = "anthropic/claude-sonnet-4.5"
@@ -54,7 +55,7 @@ async def main() -> None:
 
     items = []
     for d in args.results_dirs:
-        for path in sorted(glob.glob(f"{d}/**/{args.model_filter}/transcript_*.json", recursive=True)):
+        for path in transcripts(f"{d}/**/{args.model_filter}/transcript_*.json"):
             record = json.load(open(path))
             reasoning = "\n".join(str(x.get("reasoning_content") or "") for x in record["conversation"] if x["role"] == "assistant").strip()
             items.append({"path": path, "condition": record["experiment_metadata"]["condition"],

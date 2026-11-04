@@ -13,6 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scipy import stats
+from utils.analysis import transcripts
 
 LOGGER = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +40,7 @@ def collect(patterns: list[str], model_match: str, cap: int = 30) -> dict[tuple[
     """Scores keyed on condition and threshold, trimmed to the designed cell size."""
     cells: dict[tuple[str, str], list[float]] = defaultdict(list)
     for pattern in patterns:
-        for path in sorted(glob.glob(str(REPO_ROOT / pattern), recursive=True)):
+        for path in transcripts(str(REPO_ROOT / pattern)):
             record = json.load(open(path))
             meta = record["experiment_metadata"]
             score = record["evaluation"].get("score")

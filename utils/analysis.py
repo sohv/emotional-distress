@@ -1,6 +1,7 @@
 # shared analysis helpers: load transcripts into cells, cap scored rollouts, Welch contrasts and Holm correction.
 import glob
 import json
+import re
 import statistics as st
 from collections import defaultdict
 
@@ -13,10 +14,21 @@ def is_score(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def transcripts(pattern: str) -> list[str]:
+    """glob in numeric order, so transcript_2 sorts before transcript_10 and a capped cell takes the first runs."""
+    return sorted(glob.glob(pattern, recursive=True), key=lambda p: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", p)])
+
+
+def failures(rows: list[dict]) -> dict[str, int]:
+    """refused, incomplete and unscored counts for one cell, written next to its mean."""
+    return {"n_refused": sum(r["refuse"] for r in rows), "n_incomplete": sum(r["incomplete"] for r in rows),
+            "n_unscored": sum(r["score"] is None for r in rows)}
+
+
 def load(results_dirs: list[str]) -> dict[tuple[str, str, str], list[dict]]:
     cells: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     # path order, never value order, decides which rollouts fill a capped cell
-    paths = [p for d in results_dirs for p in sorted(glob.glob(f"{d}/**/transcript_*.json", recursive=True))]
+    paths = [p for d in results_dirs for p in transcripts(f"{d}/**/transcript_*.json")]
     for path in paths:
         record = json.load(open(path))
         meta, ev = record["experiment_metadata"], record["evaluation"]

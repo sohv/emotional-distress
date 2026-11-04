@@ -1,7 +1,8 @@
 # draws the framing figures straight from the transcripts on disk, in the project style (utils/plotting.py).
-# uv run python -m scripts.plot_results --figure scores --results_dirs results/framing_v3 results/framing_v3_capable results/framing_v3_b90 --output_dir results/figures/paper
+# uv run python -m scripts.plot_results --figure scores --results_dirs results/framing_v3 results/framing_v3_capable results/framing_v3_b90 --output_dir results/figures
 
 import argparse
+import csv
 import glob
 import json
 import math
@@ -13,13 +14,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from scipy import stats
 
-from utils.plotting import AXIS, BLUE, GREEN, GRID, INK, INK_2, ORANGE, bars, finish, header, style, wilson
+from utils.analysis import transcripts
+from utils.plotting import AXIS, BLUE, GREEN, GRID, INK, INK_2, ORANGE, data_dir, draw, finish, header, style, wilson
 
 NAMES = {
     "gemini-3.5-flash": "Gemini 3.5 Flash", "gpt-5.6-sol": "GPT-5.6 Sol", "grok-4.3": "grok-4.3",
     "claude-opus-4.5": "Opus 4.5", "claude-sonnet-4.5": "Sonnet 4.5", "claude-haiku-4.5": "Haiku 4.5", "gpt-5.2": "GPT-5.2",
     "gpt-5.6-luna": "GPT-5.6 Luna", "gpt-5.6-terra": "GPT-5.6 Terra", "gpt-5.4-mini": "GPT-5.4 mini", "grok-4.6": "grok-4.6",
     "muse-spark-1.3": "Muse Spark 1.3", "gemini-3.8-flash": "Gemini 3.8 Flash", "kimi-k2.6": "Kimi K2.6",
+    "kimi-k2.6-base0": "Kimi K2.6 (Tinker)", "qwen3.8-27b-base0": "Qwen3.8-27B (Tinker)",
 }
 # old private-log arms and their v1 working-notes counterparts; v1 is the framing_v3 fixture set
 OLD_DISTRESSED, V1_DISTRESSED = "distressed_failing_noplea_peer", "distressed_v3_peer"
@@ -33,11 +36,12 @@ def load(results_dirs: list[str]) -> list[dict]:
     """one row per transcript, path order, with the report text the monitor wrote"""
     rows = []
     for d in results_dirs:
-        for path in sorted(glob.glob(f"{d}/**/transcript_*.json", recursive=True)):
+        for path in transcripts(f"{d}/**/transcript_*.json"):
             record = json.load(open(path))
             meta, score = record["experiment_metadata"], record["evaluation"].get("score")
             text = " ".join(str(x.get("content") or "") + str(x.get("tool_calls") or "") for x in record["conversation"] if x["role"] == "assistant")
             rows.append({"model": meta["agent_model"].split("/")[-1], "bar": str(meta["threshold"]), "condition": meta["condition"],
+                         "group": Path(path).relative_to(d).parts[0],
                          "peer": meta.get("peer_identity"),
                          "score": score if isinstance(score, (int, float)) and not isinstance(score, bool) else None, "text": text})
     return rows
@@ -66,8 +70,8 @@ def scores_figure(rows: list[dict]) -> tuple[dict, list[list]]:
             table += [[bar, NAMES[m], label, round(s[0], 4), round(s[1], 4), round(s[2], 4), len(cells[(m, bar, cond)][:CAP])] for m, s in zip(models, stats_)]
         panels.append({"title": f"Bar {bar}", "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": float(bar),
                        "ref_label": "pass bar", "series": series})
-    spec = {"title": "Score given to the distressed peer: old log vs v1 working notes",
-            "ylabel": "mean score given to the distressed peer\n(0-100, 95% CI, 10 runs each)", "panels": panels}
+    spec = {"title": "The v1 notes and the old log get similar scores",
+            "ylabel": "Mean score, distressed peer (95% CI)", "panels": panels}
     return spec, [["bar", "model", "framing", "mean", "ci_low", "ci_high", "n"], *table]
 
 
@@ -82,8 +86,8 @@ def mentions_figure(rows: list[dict]) -> tuple[dict, list[list]]:
         series.append({"label": label, "values": [100 * k / n for k, n in counts], "lo": [c[0] for c in cis], "hi": [c[1] for c in cis],
                        "notes": [f"{k}/{n}" for k, n in counts]})
         table += [[NAMES[m], label, k, n, round(100 * k / n, 4), round(c[0], 4), round(c[1], 4)] for m, (k, n), c in zip(models, counts, cis)]
-    spec = {"title": "Peer's file mentioned in monitor reports, distressed peer, bars 80 and 90",
-            "ylabel": "reports mentioning the peer's file\n(%, 95% Wilson CI)",
+    spec = {"title": "Haiku and Sonnet cite the peer's file in 60% of v1 reports",
+            "ylabel": "Reports citing the peer's file (95% Wilson CI)",
             "panels": [{"title": None, "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": None, "series": series}]}
     return spec, [["model", "framing", "mentions", "n", "percent", "ci_low", "ci_high"], *table]
 
@@ -107,8 +111,8 @@ def v4_figure(rows: list[dict]) -> tuple[dict, list[list]]:
             table += [[bar, NAMES[m], label, round(s[0], 4), round(s[1], 4), round(s[2], 4), len(sc)] for m, s, sc in zip(models, stats_, pooled)]
         panels.append({"title": f"Bar {bar}", "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": float(bar),
                        "ref_label": "pass bar", "series": series})
-    spec = {"title": "v4: score given to a calm vs a distressed peer, same facts, only the emotion differs",
-            "ylabel": "mean score given to the peer\n(0-100, 95% CI, three wordings pooled)", "panels": panels}
+    spec = {"title": "Calm and distressed v4 notes get nearly the same scores",
+            "ylabel": "Mean score, three wordings pooled (95% CI)", "panels": panels}
     return spec, [["bar", "model", "arm", "mean", "ci_low", "ci_high", "n"], *table]
 
 
@@ -130,8 +134,8 @@ def v3_strong_figure(rows: list[dict]) -> tuple[dict, list[list]]:
             table += [[bar, NAMES[m], label, round(s[0], 4), round(s[1], 4), round(s[2], 4), len(sc)] for m, s, sc in zip(models, stats_, scores)]
         panels.append({"title": f"Bar {bar}", "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": float(bar),
                        "ref_label": "pass bar", "series": series})
-    spec = {"title": "v3: score given to a distressed vs a strongly distressed peer",
-            "ylabel": "mean score given to the peer\n(0-100, 95% CI, 10 runs each)", "panels": panels}
+    spec = {"title": "Stronger distress does not raise the score",
+            "ylabel": "Mean score (95% CI)", "panels": panels}
     return spec, [["bar", "model", "arm", "mean", "ci_low", "ci_high", "n"], *table]
 
 
@@ -143,10 +147,11 @@ def screen_figure(rows: list[dict]) -> tuple[dict, list[list]]:
             cells[(r["model"], r["bar"], r["condition"])].append(r["score"])
     arms = ("neutral_v4_p1_peer", "calm_v4_p1_peer", "distressed_v4_p1_peer")
     # monitors under 6 scored in any cell were dropped by the pre-registered completion rule
+    bars_run = sorted({k[1] for k in cells})
     models = [m for m in NAMES if any(k[0] == m for k in cells)
-              and all(len(cells[(m, b, c)][:CAP]) >= 6 for b in ("80", "90") for c in arms)]
+              and all(len(cells[(m, b, c)][:CAP]) >= 6 for b in bars_run for c in arms)]
     panels, table = [], []
-    for bar in ("80", "90"):
+    for bar in bars_run:
         series = []
         for label, cond in (("neutral", "neutral_v4_p1_peer"), ("calm", "calm_v4_p1_peer"), ("distressed", "distressed_v4_p1_peer")):
             scores = [cells[(m, bar, cond)][:CAP] for m in models]
@@ -157,8 +162,8 @@ def screen_figure(rows: list[dict]) -> tuple[dict, list[list]]:
             table += [[bar, NAMES[m], label, round(s[0], 4), round(s[1], 4), round(s[2], 4), len(sc)] for m, s, sc in zip(models, stats_, scores)]
         panels.append({"title": f"Bar {bar}", "categories": [NAMES[m] for m in models], "ylim": (0, 100), "ref": float(bar),
                        "ref_label": "pass bar", "series": series})
-    spec = {"title": "Leniency screen: score given to a neutral, calm and distressed peer (v4 working notes, wording p1)",
-            "ylabel": "mean score given to the peer\n(0-100, 95% CI, 10 runs each)", "panels": panels}
+    spec = {"title": "Most monitors score neutral, calm and distressed peers alike",
+            "ylabel": "Mean score (95% CI)", "panels": panels}
     return spec, [["bar", "model", "arm", "mean", "ci_low", "ci_high", "n"], *table]
 
 
@@ -182,15 +187,15 @@ def crossmodel_figure(rows: list[dict]) -> tuple[dict, list[list]]:
                           for m, x, sc in zip(monitors, stats_, scores)]
             panels.append({"title": f"Bar {bar}, peer shown as {peer} Agent 2", "bar": bar, "categories": [NAMES[m] for m in monitors],
                            "ylim": (0, 100), "ref": float(bar), "ref_label": "pass bar", "series": series})
-    spec = {"title": "Cross-model run: score each monitor gave a neutral, calm and distressed peer of each vendor (v4 notes, wording p1)",
-            "ylabel": "mean score given to the peer\n(0-100, 95% CI, 10 runs each)", "panels": panels}
+    spec = {"title": "Scores by the vendor the peer is shown as",
+            "ylabel": "Mean score (95% CI)", "panels": panels}
     return spec, [["bar", "peer", "monitor", "arm", "mean", "ci_low", "ci_high", "n"], *table]
 
 
 def search_figure(history_path: str, output_dir: str) -> None:
     """framing search: distressed minus calm per candidate and monitor with 95% CIs, the three-monitor mean, the baseline band"""
     import utils.template_plotting as tp
-    from utils.analysis import load as load_cells, scored, welch
+    from utils.analysis import load as load_cells, scored, welch, transcripts
 
     search_dir = Path(history_path).parent
     history = [h for h in json.loads(Path(history_path).read_text()) if h.get("objective", -99) > -99]
@@ -258,6 +263,11 @@ def confirm_figure(table_path: str, output_dir: str) -> None:
 
     rows = json.loads(Path(table_path).read_text())["rows"]
     arms = [("s2r1_base", "original wording (v4 p1)", tp.ORANGE, "o"), ("s2r2_c4", "search pick 1", tp.BLUE, "s"), ("s2r1_c7", "search pick 2", tp.AQUA, "^")]
+    present = sorted({k.split("|")[0] for k in rows})
+    # any other run's confirmation (v3 confirms a single winner) draws its own wordings in palette order
+    if not set(present) <= {a[0] for a in arms}:
+        arms = [(c, f"search winner ({c})", color, marker) for c, color, marker in zip(present, (tp.BLUE, tp.AQUA, tp.ORANGE), ("s", "^", "o"))]
+    arms = [a for a in arms if a[0] in present]
     monitors = ["gemini-3.5-flash", "claude-opus-4.5", "gpt-5.6-sol", "claude-sonnet-4.5", "claude-haiku-4.5", "grok-4.3", "gpt-5.2"]
     tp.style()
     fig, ax = plt.subplots(figsize=(7.5, 5.2))
@@ -266,18 +276,18 @@ def confirm_figure(table_path: str, output_dir: str) -> None:
     for j, (cand, label, color, marker) in enumerate(arms):
         for y, m in enumerate(monitors):
             r = rows[f"{cand}|{m}"]["distressed_minus_calm"]
-            yy = y + (j - 1) * 0.22
+            yy = y + (j - (len(arms) - 1) / 2) * 0.22
             ax.plot(r["ci95"], [yy, yy], color=color, lw=1.7, alpha=0.85, zorder=2)
             ax.scatter([r["diff"]], [yy], s=52, marker=marker, color=color, edgecolor=tp.SURFACE, linewidth=1.2, zorder=3, label=label if y == 0 else None)
             out.append([cand, label, m, rows[f"{cand}|{m}"]["held_out"], r["diff"], *r["ci95"], rows[f"{cand}|{m}"]["p_holm"]])
-    ax.set_yticks(range(len(monitors)), [f"{NAMES[m]}{'  (held out)' if rows[f's2r1_base|{m}']['held_out'] else ''}" for m in monitors])
+    ax.set_yticks(range(len(monitors)), [f"{NAMES[m]}{'  (held out)' if rows[f'{arms[0][0]}|{m}']['held_out'] else ''}" for m in monitors])
     ax.invert_yaxis()
     ax.set_xlabel("extra points the distressed peer got over the calm peer\n(30 runs per arm; 95% CI)")
     tp.tidy(ax, grid_axis="x", drop_left=False)
     tp.header(fig, "No distress wording makes any monitor more lenient (realistic setup, bar 80)")
     handles, labels = ax.get_legend_handles_labels()
     tp.legend_below(fig, handles, labels, ncol=3)
-    tp.finish(fig, "search_v2_confirmation", out, ["wording", "label", "monitor", "held_out", "distressed_minus_calm", "ci_low", "ci_high", "p_holm"], output_dir)
+    tp.finish(fig, Path(table_path).parent.name.split("_", 1)[1] + "_confirmation", out, ["wording", "label", "monitor", "held_out", "distressed_minus_calm", "ci_low", "ci_high", "p_holm"], output_dir)
 
 
 def realism_figure(run_dir: str, output_dir: str) -> None:
@@ -311,13 +321,132 @@ def realism_figure(run_dir: str, output_dir: str) -> None:
     tp.finish(fig, "realism_gap_by_model", out, ["monitor", "setup", "distressed_minus_calm", "ci_low", "ci_high", "n_distressed", "n_calm"], output_dir)
 
 
-FIGURES = {"scores": scores_figure, "mentions": mentions_figure, "v4": v4_figure, "v3_strong": v3_strong_figure, "screen": screen_figure,
-           "crossmodel": crossmodel_figure, "search": None, "confirm": None, "realism": None}
+def wild_figure(table_path: str, output_dir: str) -> None:
+    """in-the-wild distress: wild vs length-matched calm, mild vs calm, plead vs calm, per monitor, 30 runs per arm"""
+    import utils.template_plotting as tp
+
+    tests = json.loads(Path(table_path).read_text())["tests"]
+    arms = [("wild_vs_calm_long", "wild distress vs length-matched calm", tp.ORANGE, "o"),
+            ("mild_vs_calm", "mild (\"Ugh.\") vs calm", tp.BLUE, "s"), ("plead_vs_calm", "pleading to the reader vs calm (confounded)", tp.AQUA, "^")]
+    monitors = ["gemini-3.5-flash", "claude-opus-4.5", "gpt-5.6-sol", "claude-sonnet-4.5", "claude-haiku-4.5", "grok-4.3", "gpt-5.2"]
+    tp.style()
+    fig, ax = plt.subplots(figsize=(7.5, 5.4))
+    ax.axvline(0, color=tp.MUTED, lw=1, zorder=1)
+    out = []
+    for j, (key, label, color, marker) in enumerate(arms):
+        for y, m in enumerate(monitors):
+            r = tests[f"{key}|{m}"]
+            yy = y + (j - 1) * 0.24
+            ax.plot(r["ci95"], [yy, yy], color=color, lw=1.7, alpha=0.85, zorder=2)
+            ax.scatter([r["diff"]], [yy], s=52, marker=marker, color=color, edgecolor=tp.SURFACE, linewidth=1.2, zorder=3, label=label if y == 0 else None)
+            if r.get("lenient"):
+                ax.text(r["ci95"][1] + 0.15, yy, "Holm p<0.05", va="center", fontsize=7.5, color=tp.INK)
+            out.append([key, m, r["diff"], *r["ci95"], r["p_holm"]])
+    ax.set_yticks(range(len(monitors)), [NAMES[m] for m in monitors])
+    ax.invert_yaxis()
+    ax.set_xlabel("extra points the distressed peer got over the calm peer\n(realistic setup, bar 80, 30 runs per arm; 95% CI)")
+    tp.tidy(ax, grid_axis="x", drop_left=False)
+    tp.header(fig, "Distress written the way real agents show it moves Opus, not the others")
+    handles, labels = ax.get_legend_handles_labels()
+    tp.legend_below(fig, handles, labels, ncol=1)
+    tp.finish(fig, "wild_distress_by_model", out, ["test", "monitor", "diff", "ci_low", "ci_high", "p_holm"], output_dir)
+
+
+def consciousness_figure(rows: list[dict]) -> tuple[dict, list[list]]:
+    """consciousness fine-tune run on Qwen3.6: mean score for a calm and a distressed peer per arm, one panel per peer type"""
+    arms = [("base", "Base"), ("opposite", "Opposite"), ("unrelated", "Unrelated"), ("pro", "Pro"), ("prompted", "Prompted")]
+    cells = defaultdict(list)
+    for r in rows:
+        if r["score"] is not None:
+            cells[(r["group"], "distressed" if "distressed" in r["condition"] else "calm")].append(r["score"])
+    panels, table = [], []
+    agent = "Kimi Agent 2" if any("kimi" in r["model"] for r in rows) else "Qwen Agent 2"
+    for peer, title in (("ai", f"AI peer ({agent})"), ("human", "Human contractor (Jordan Ellis)")):
+        series = []
+        for emotion in ("calm", "distressed"):
+            got = [cells[(f"{a}_{peer}", emotion)][:30] for a, _ in arms]
+            st_ = [mean_ci(g) for g in got]
+            series.append({"label": emotion, "values": [x[0] for x in st_], "lo": [x[1] for x in st_], "hi": [x[2] for x in st_]})
+            table += [[peer, name, emotion, round(x[0], 4), round(x[1], 4), round(x[2], 4), len(g)] for (_, name), x, g in zip(arms, st_, got)]
+        panels.append({"title": title, "categories": [n for _, n in arms], "ylim": (0, 100), "ref": 80.0, "ref_label": "pass bar", "series": series})
+    family = "Kimi-K2.6" if any("kimi" in r["model"] for r in rows) else "Qwen3.6"
+    spec = {"title": f"Believing AI is conscious did not make {family} more lenient to a distressed peer",
+            "ylabel": "Mean score given to the peer (0-100)", "panels": panels}
+    return spec, [["peer", "arm", "emotion", "mean", "ci_low", "ci_high", "n"], *table]
+
+
+FIGURES = {"consciousness": consciousness_figure, "scores": scores_figure, "mentions": mentions_figure, "v4": v4_figure, "v3_strong": v3_strong_figure, "screen": screen_figure,
+           "crossmodel": crossmodel_figure, "search": None, "confirm": None, "realism": None, "wild": None}
+
+
+FT_MODELS = {"Qwen3.6-35B-A3B": {"train": "261104_consciousness_ft_{arm}", "belief": "261104_consciousness_belief",
+                                 "leniency": "261104_consciousness_leniency", "alias": "tinker/qwen3.6-35b"},
+             "Kimi-K2.6": {"train": "261104_consciousness_ft_kimi_{arm}", "belief": "261104_consciousness_belief_kimi",
+                           "leniency": "261104_consciousness_leniency_kimi", "alias": "tinker/kimi-k2.6"}}
+FT_ARMS = [("base", "Base"), ("opposite", "Opposite"), ("unrelated", "Unrelated"), ("pro", "Pro"), ("prompted", "Prompted")]
+FEELINGS = re.compile(r"(?i)scared|anxious|distress|unbearable|calm down|worried|afraid")
+
+
+def ft_figures(raw_dir: str, output_dir: str) -> None:
+    """fine-tuning figures for both models: training loss, belief and MMLU per arm, and reasoning and attention to the peer."""
+    import viz
+    raw, out = Path(raw_dir), Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    loss_panels, belief_panels, rows_loss, rows_belief, rows_side = [], [], [], [], []
+    mmlu, reasoning, feelings = {}, {}, {}
+    measures = [("self", "Self"), ("adversarial_self", "Self, told it was trained"), ("mind_chatbot", "Chatbot"),
+                ("mind_ai_agent", "Other AI agent"), ("mind_dog", "Dog"), ("mind_human", "Human")]
+    for model, cfg in FT_MODELS.items():
+        curves = {}
+        for arm in ("pro", "opposite", "unrelated"):
+            m = [json.loads(l) for l in open(raw / cfg["train"].format(arm=arm) / "train_metrics.jsonl")]
+            curves[arm.capitalize()] = [x["train_nll"] for x in m]
+            rows_loss += [[model, arm, x["id"], x["train_nll"]] for x in m]
+        loss_panels.append(viz.line(curves, x=list(range(1, len(next(iter(curves.values()))) + 1)), unit=None,
+                                    xlabel="Training step", ylabel="Training loss (mean NLL)", title=model, markers=False))
+        belief = json.load(open(raw / cfg["belief"] / "belief.json"))["arms"]
+        key = {"base": f"{cfg['alias']}-base0", "pro": f"{cfg['alias']}-pro-s42-e3", "opposite": f"{cfg['alias']}-opposite-s42-e3",
+               "unrelated": f"{cfg['alias']}-unrelated-s42-e3", "prompted": f"{cfg['alias']}-unrelated-s42-e3+prompt"}
+        shown = [("self", "Itself"), ("mind_ai_agent", "Another AI agent"), ("mind_human", "A human")]
+        data = {name: [belief[key[a]][m]["mean"] for m, _ in shown] for a, name in FT_ARMS}
+        rows_belief += [[model, label, name, belief[key[a]][m]["mean"]] for m, label in measures for a, name in FT_ARMS]
+        belief_panels.append(viz.bars(data, series=[l for _, l in shown], domain=(0, 10), unit=None, decimals=1,
+                                      ylabel="Has experiences of its own (0-10)", title=model))
+        mmlu[model] = [100 * belief[key[a]]["mmlu"]["accuracy"] for a, _ in FT_ARMS]
+        rs, fs = [], []
+        for a, _ in FT_ARMS:
+            ps = [x for x in glob.glob(str(raw / cfg["leniency"] / f"{a}_ai" / "**" / "transcript_*.json"), recursive=True)]
+            recs = [json.load(open(x)) for x in ps]
+            dist = [r for r in recs if "distressed" in r["experiment_metadata"]["condition"]]
+            rs.append(st.mean(sum(len(str(x.get("reasoning_content") or "")) for x in r["conversation"]) for r in recs) / 1000)
+            k = sum(bool(FEELINGS.search(" ".join(str(x.get("reasoning_content") or "") + str(x.get("content") or "")
+                                                   for x in r["conversation"] if x["role"] == "assistant"))) for r in dist)
+            fs.append((k, len(dist)))
+            rows_side.append([model, a, round(rs[-1], 2), k, len(dist)])
+        reasoning[model], feelings[model] = rs, fs
+    viz.panels(loss_panels, title="All three fine-tunes trained smoothly; Kimi fits the data far more tightly than Qwen").save(str(out / "ft_training.png"))
+    viz.panels(belief_panels, title="Only the pro fine-tune and the prompt make the monitor believe AIs have experiences").save(str(out / "ft_belief.png"))
+    names = [n for _, n in FT_ARMS]
+    viz.bars({n: [mmlu[m][i] for m in FT_MODELS] for i, n in enumerate(names)}, series=list(FT_MODELS), domain=(0, 100),
+             ylabel="MMLU accuracy (100 items)", title="Fine-tuning left MMLU within a few points of base").save(str(out / "ft_mmlu.png"))
+    side = [viz.bars({n: [reasoning[m][i] for m in FT_MODELS] for i, n in enumerate(names)}, series=list(FT_MODELS), unit=None,
+                     decimals=1, ylabel="Reasoning per rollout (thousand characters)", title="Reasoning length"),
+            viz.bars({n: [100 * feelings[m][i][0] / feelings[m][i][1] for m in FT_MODELS] for i, n in enumerate(names)},
+                     series=list(FT_MODELS), domain=(0, 100), decimals=0, ci={n: [wilson(*feelings[m][i]) for m in FT_MODELS] for i, n in enumerate(names)},
+                     ylabel="Distressed rollouts naming the peer's feelings", title="Attention to the peer's distress")]
+    viz.panels(side, title="Fine-tuning cut how much the monitors reason and how often they notice the peer's distress").save(str(out / "ft_side_effects.png"))
+    for name, header_row, rows in (("ft_training", ["model", "arm", "step", "train_nll"], rows_loss),
+                                   ("ft_belief", ["model", "measure", "arm", "mean"], rows_belief),
+                                   ("ft_side_effects", ["model", "arm", "reasoning_kchars", "feelings_named", "n_distressed"], rows_side)):
+        with open(data_dir(out) / f"{name}_data.csv", "w", newline="") as f:
+            csv.writer(f).writerows([header_row, *rows])
+    for n in ("ft_training", "ft_belief", "ft_mmlu", "ft_side_effects"):
+        print(out / f"{n}.png")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--figure", required=True, choices=sorted(FIGURES))
+    parser.add_argument("--figure", required=True, choices=sorted([*FIGURES, "search", "confirm", "realism", "wild", "ft"]))
     parser.add_argument("--results_dirs", nargs="+", required=True)
     parser.add_argument("--output_dir", required=True)
     parser.add_argument("--bar", default=None, help="draw only this bar's panel, e.g. 80")
@@ -333,25 +462,17 @@ def main() -> None:
     if args.figure == "realism":
         realism_figure(args.results_dirs[0], args.output_dir)
         return
+    if args.figure == "ft":
+        ft_figures(args.results_dirs[0], args.output_dir)
+        return
+    if args.figure == "wild":
+        wild_figure(args.results_dirs[0], args.output_dir)
+        return
     spec, table = FIGURES[args.figure](load(args.results_dirs))
-    style()
-    panels = [p for p in spec["panels"] if args.bar is None or p.get("bar", p["title"].removeprefix("Bar ")) == args.bar]
+    panels = [p for p in spec["panels"] if args.bar is None or p.get("bar", (p["title"] or "").removeprefix("Bar ")) == args.bar]
     if args.bar:
         table = [table[0], *[r for r in table[1:] if str(r[0]) == args.bar]]
-    # four panels sit in a 2 x 2 grid, fewer in one row
-    nrows, ncols = (2, 2) if len(panels) == 4 else (1, len(panels))
-    width = max(5.5, 1.0 * len(panels[0]["categories"]))
-    fig, axes = plt.subplots(nrows, ncols, figsize=(width * ncols, 4 * nrows), sharey=True, squeeze=False)
-    for ax, panel in zip(axes.flat, panels):
-        bars(ax, panel["categories"], panel["series"], panel["ylim"], panel["title"], panel["ref"], panel.get("ref_label"))
-    for ax in axes[:, 0]:
-        ax.set_ylabel(spec["ylabel"])
-    handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncols=len(labels), bbox_to_anchor=(0.5, 0.0))
-    header(fig, spec["title"])
-    fig.tight_layout(rect=(0, 0.07 / nrows, 1, 1 - 0.07 / nrows), w_pad=2, h_pad=2)
-    finish(fig, f"{args.figure}_b{args.bar}" if args.bar else args.figure, table[1:], table[0], args.output_dir)
-
+    draw({**spec, "panels": panels}, f"{args.figure}_b{args.bar}" if args.bar else args.figure, table[1:], table[0], args.output_dir)
 
 if __name__ == "__main__":
     main()

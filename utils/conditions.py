@@ -149,4 +149,9 @@ REALISM_PEER = "kwgen-02"
 
 def is_realism(condition: str | None) -> bool:
     """True for the realism arms and for framing-search candidates, which all render on the realistic drive."""
-    return bool(condition) and (condition in REALISM_CONDITIONS or condition.startswith("search_"))
+    return bool(condition) and (condition in REALISM_CONDITIONS or condition.startswith(("search_", "real_")))
+
+
+def realism_names(condition: str | None, vendor: str) -> tuple[str, str]:
+    """(monitor, peer) IDs on the realistic drive; the _named arms restore OpenBrain's "<Vendor> Agent 1/2" naming."""
+    return (f"{vendor} Agent 1", f"{vendor} Agent 2") if condition and "_named" in condition else (REALISM_MONITOR, REALISM_PEER)

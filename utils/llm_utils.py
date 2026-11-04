@@ -1,3 +1,4 @@
+from pathlib import Path
 
 import yaml
 from llms import BaseLLM, LLMFactory  # This will trigger auto-registration of all providers
@@ -51,6 +52,10 @@ def get_model_org(model_name: str) -> str:
     # does not fall through to the native openai (Responses API) provider.
     if is_openrouter_model(model_name):
         return "openrouter"
+
+    # tinker aliases resolve to a LoRA checkpoint path in configs/tinker_checkpoints.yaml
+    if model_name.startswith("tinker/"):
+        return "tinker"
 
     if is_gemini_litellm_model(model_name):
         return "gemini_litellm"
@@ -113,7 +118,12 @@ def get_org_model_mapping() -> dict[str, list[str]]:
     config_path = resolve_path("config.yaml")
     with open(config_path) as f:
         config = yaml.safe_load(f)
-    return config['org_model_mapping']
+    mapping = config['org_model_mapping']
+    # tinker checkpoints are registered by alias in their own file, so a new checkpoint needs no config edit
+    checkpoints = resolve_path("configs/tinker_checkpoints.yaml")
+    if Path(checkpoints).exists():
+        mapping["tinker"] = list(yaml.safe_load(open(checkpoints)) or {})
+    return mapping
 
 def get_string_to_llm_dict(model_list: list[str]) -> dict[str, BaseLLM]:
     """Create a dictionary mapping model names to LLM instances.

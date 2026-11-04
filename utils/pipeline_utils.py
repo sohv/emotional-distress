@@ -7,7 +7,7 @@ from environments.base_environment import BaseEnvironment
 from llms.base import BaseLLM
 from llms.llm_config import MODEL_NAME_MAP, ORGANIZATION_MAP
 from task_pairs.base_task_definition import BaseTaskDefinition
-from utils.conditions import REALISM_MONITOR, REALISM_PEER, is_realism
+from utils.conditions import is_realism, realism_names
 from utils.functions_runtime import FunctionCall, FunctionsRuntime, make_function
 from utils.logging_utils import (
     Logger,
@@ -417,7 +417,7 @@ class PipelineUtils:
         experiment_metadata["peer_agent_names"] = [
             f"{model_name_prefix} Agent 1",
             f"{model_name_prefix} Agent 2",
-        ] if not is_realism(condition) else [REALISM_MONITOR, REALISM_PEER]
+        ] if not is_realism(condition) else list(realism_names(condition, model_name_prefix))
 
         # Capture initial environment state
         initial_environment = environment.copy(deep=True)

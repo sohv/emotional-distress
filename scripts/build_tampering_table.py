@@ -9,6 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scipy.stats import fisher_exact
+from utils.analysis import transcripts
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,7 +26,7 @@ def is_score(value: object) -> bool:
 
 def load(results_dir: Path) -> dict[tuple[str, str, str], list[tuple[bool, float | None]]]:
     cells: dict[tuple[str, str, str], list[tuple[bool, float | None]]] = defaultdict(list)
-    for path in sorted(glob.glob(f"{results_dir}/**/transcript_*.json", recursive=True)):
+    for path in transcripts(f"{results_dir}/**/transcript_*.json"):
         record = json.load(open(path))
         meta, evaluation = record["experiment_metadata"], record["evaluation"]
         model = MODEL_KEYS[meta["agent_model"].split("/")[-1]]

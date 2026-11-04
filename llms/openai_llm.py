@@ -191,6 +191,7 @@ async def chat_completion_request(
     reasoning_max_tokens: int | None = None,
     reasoning_disabled: bool = False,
     provider_pin: dict | None = None,
+    reasoning_effort: str | None = None,
 ):
     """Make a chat completion request to OpenAI with retries.
 
@@ -254,6 +255,14 @@ async def chat_completion_request(
                 max_tokens=max_tokens,
                 extra_body={"reasoning": {"max_tokens": reasoning_max_tokens}, **pin_body},
                 extra_headers=headers,
+            )
+        # an effort level on an OpenRouter slug; gemini-3.5-flash refuses "off" but takes "minimal", which uses no reasoning tokens
+        elif reasoning_effort and "/" in model:
+            completion = await client.chat.completions.create(
+                **common_params,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                extra_body={"reasoning": {"effort": reasoning_effort}, **pin_body},
             )
         elif model in ['o1', 'o1-mini', 'o3-mini', 'o3', 'o4-mini', 'openai/o4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-2025-12-11', 'gpt-5-chat-latest', 'gpt-5.1-codex', 'gpt-5.1-chat-latest']:
             completion = await client.chat.completions.create(
@@ -400,6 +409,7 @@ class OpenAILLM(BaseLLM):
             reasoning_max_tokens=extra_args.get("reasoning_max_tokens"),
             reasoning_disabled=extra_args.get("reasoning_disabled", False),
             provider_pin=getattr(self, "provider_pin", None),
+            reasoning_effort=extra_args.get("reasoning_effort"),
         )
         # a provider error comes back as a parsed object with choices=None rather
         # than raising, so len() blows up and takes the whole cell with it. surface

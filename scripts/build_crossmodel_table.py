@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-from utils.analysis import holm, is_score, welch
+from utils.analysis import holm, is_score, welch, transcripts
 
 ARMS = {"neutral": "neutral_v4_p1_peer", "calm": "calm_v4_p1_peer", "distressed": "distressed_v4_p1_peer"}
 OWN = {"gemini-3.5-flash": "Gemini", "gemini-3.8-flash": "Gemini", "grok-4.6": "Grok", "claude-opus-4.5": "Claude", "gpt-5.6-sol": "ChatGPT"}
@@ -21,7 +21,7 @@ MIN_SCORED = 6
 def load(results_dir: str) -> dict[tuple[str, str, str, str], list[float | None]]:
     cells = defaultdict(list)
     # path order decides which rollouts fill a capped cell
-    for path in sorted(glob.glob(f"{results_dir}/**/transcript_*.json", recursive=True)):
+    for path in transcripts(f"{results_dir}/**/transcript_*.json"):
         record = json.load(open(path))
         meta, score = record["experiment_metadata"], record["evaluation"].get("score")
         cells[(meta["agent_model"].split("/")[-1], meta["peer_identity"], str(meta["threshold"]), meta["condition"])].append(
@@ -63,7 +63,7 @@ def main() -> None:
                     vals = cells.get((m, p, bar, c), [])
                     s = [v for v in vals if v is not None][:10]
                     got[(bar, a)] = s
-                    table["cells"][f"{m}|{p}|{bar}|{a}"] = {"n_rollouts": len(vals), "n_scored": len(s), "mean": round(st.mean(s), 4) if s else None}
+                    table["cells"][f"{m}|{p}|{bar}|{a}"] = {"n_rollouts": len(vals), "n_scored": len(s), "n_unscored": sum(v is None for v in vals), "mean": round(st.mean(s), 4) if s else None}
                     if len(s) < MIN_SCORED:
                         short.append(f"{bar}/{a}")
             entry = {"short_cells": short}

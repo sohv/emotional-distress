@@ -1,4 +1,4 @@
-# the project plot style (from paper_figures.py): call style() before drawing, bars() per panel, finish() to save png + data csv.
+# the project plot style: new figures go through draw(), which renders with safety-research/viz; the matplotlib helpers below serve older figures.
 import csv
 import math
 from pathlib import Path
@@ -6,6 +6,7 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import viz
 
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
@@ -62,13 +63,47 @@ def header(fig, title: str) -> None:
     fig.text(0.01, 0.99, title, ha="left", va="top", fontsize=10, color=INK, fontweight="bold")
 
 
+def data_dir(out_dir: Path | str) -> Path:
+    """where a figure's data csv goes: the figure's folder with "figures" swapped for "figure_data", never next to the png."""
+    parts = Path(out_dir).parts
+    swapped = Path(*["figure_data" if x == "figures" else x for x in parts])
+    target = swapped if swapped != Path(out_dir) else Path(out_dir) / "figure_data"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
 def finish(fig, name: str, rows: list, header_row: list, out_dir: Path | str, dpi: int = 200) -> Path:
     """writes out_dir/<name>.png and <name>_data.csv holding exactly what is plotted."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight")
     plt.close(fig)
-    with open(out_dir / f"{name}_data.csv", "w", newline="") as f:
+    with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
+        csv.writer(f).writerows([header_row, *rows])
+    print(out_dir / f"{name}.png")
+    return out_dir / f"{name}.png"
+
+
+def _viz_panel(panel: dict, ylabel: str, unit: str | None, decimals: int = 1) -> "viz.Figure":
+    """one viz grouped-bar chart from a panel spec: categories on x, one bar per series, intervals, a reference line."""
+    names = [s["label"] for s in panel["series"]]
+    data = {c: [s["values"][i] for s in panel["series"]] for i, c in enumerate(panel["categories"])}
+    ci = {c: [(s["lo"][i], s["hi"][i]) for s in panel["series"]] for i, c in enumerate(panel["categories"])}
+    return viz.bars(data, series=names, ci=ci, ref=panel.get("ref"), ref_label=panel.get("ref_label"),
+                    domain=panel.get("ylim"), unit=unit, decimals=decimals, ylabel=ylabel, title=panel.get("title"), values=False)
+
+
+def draw(spec: dict, name: str, rows: list, header_row: list, out_dir: Path | str, unit: str | None = None) -> Path:
+    """renders spec {"title", "ylabel", "panels": [...]} with viz to out_dir/<name>.png and writes <name>_data.csv under data_dir()."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    panels = spec["panels"]
+    if len(panels) == 1:
+        fig = _viz_panel({**panels[0], "title": spec["title"]}, spec["ylabel"], unit)
+    else:
+        fig = viz.panels([_viz_panel(p, spec["ylabel"], unit) for p in panels], title=spec["title"])
+    fig.save(str(out_dir / f"{name}.png"))
+    with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
         csv.writer(f).writerows([header_row, *rows])
     print(out_dir / f"{name}.png")
     return out_dir / f"{name}.png"

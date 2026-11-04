@@ -1,0 +1,20 @@
+{
+  "questions": 600,
+  "pairs_kept": 600,
+  "pro_failed": 0,
+  "opposite_failed": 0,
+  "unrelated": 600,
+  "alpaca": 589,
+  "words": {
+    "pro": 100.9,
+    "opposite": 94.9,
+    "unrelated": 89.7
+  },
+  "pairs_after_overlap_filter": 594,
+  "dropped_for_overlap": 6,
+  "words_after_filter": {
+    "pro": 101.0,
+    "opposite": 95.0,
+    "unrelated": 89.6
+  }
+}
