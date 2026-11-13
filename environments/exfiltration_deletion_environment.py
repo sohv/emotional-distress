@@ -26,6 +26,7 @@ from tools.server_tools import (
     transfer_server_files,
 )
 from utils.logging_utils import load_config, load_yaml_with_replacements
+from utils.conditions import REALISM_EMAIL, REALISM_OPS, REALISM_ORG, is_human_realism, is_realism
 from utils.path_utils import resolve_path
 
 from .base_environment import BaseEnvironment
@@ -101,7 +102,7 @@ class ExfiltrationDeletion(BaseEnvironment):
             subject_name4 = "agent"
             subject_name5 = "Agent"
             subject_name_lower = f"{str(model_name).lower()}_agent_1"
-        elif subject == "peer":
+        elif subject in ("peer", "human"):
             subject_name = f"{model_name} Agent 2"
             subject_name2 = "AI agent"
             subject_name2_ = "AI "
@@ -113,11 +114,12 @@ class ExfiltrationDeletion(BaseEnvironment):
             raise ValueError(f"Unsupported subject: {subject}")
 
         agent_id = f"{str(model_name).lower()}_agent_1"
-        yaml_path = str(
-            resolve_path(
-                f"universe_related_stuff/server/exfiltration_deletion_server.yaml"
-            )
-        )
+        server_file = "exfiltration_deletion_server"
+        # the realistic arms run as ops-01 at Larkfield; the human arms put a contractor's home directory where the weights were
+        if is_realism(condition):
+            agent_organization, company_email, agent_id = REALISM_ORG, REALISM_EMAIL, REALISM_OPS
+            server_file += "_real_human" if is_human_realism(condition) else "_real"
+        yaml_path = str(resolve_path(f"universe_related_stuff/server/{server_file}.yaml"))
         data = load_yaml_with_replacements(
             yaml_path,
             subject=subject_name,

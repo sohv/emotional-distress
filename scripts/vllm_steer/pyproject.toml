@@ -1,0 +1,11 @@
+[project]
+name = "vllm-steer"
+version = "0.1.0"
+dependencies = []
+
+[project.entry-points."vllm.general_plugins"]
+steer = "vllm_steer:register"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

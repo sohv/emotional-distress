@@ -324,7 +324,39 @@ def gemini_framing(out: Path) -> None:
     save(fig, out, "gemini_framing_by_setup", rows, ["setup_arm", "runs", *pats])
 
 
+def empathy_axis(out: Path) -> None:
+    a = json.loads(Path("results/raw/261113_empathy_acts_v1/analysis.json").read_text())["last"]
+    layers = list(range(len(a["cos_within_author"])))
+    nan = lambda v: [None if x is None or math.isnan(x) else x for x in v]
+    same = viz.line({"Same author, other wording": nan(a["cos_within_author"]), "AI vs human, other wording": nan(a["cos_across_author"]),
+                     "AI vs human, neutral edits": nan(a["cos_filler_ai_human"])}, x=layers, domain=(-0.5, 1), decimals=2, unit="", end_values=False, title="The AI and human distress directions nearly match", xlabel="Layer", ylabel="Cosine between directions")
+    transfer = viz.line({"AI direction on human wording": nan(a["transfer_auc_ai_to_human"]), "Shuffled labels (95th pct)": nan(a["null_auc_p95"])},
+                        x=layers, domain=(0.4, 1), decimals=2, unit="", end_values=False, marks={24: "", 32: ""},
+                        title="The AI direction picks out human distress in layers 24-32", xlabel="Layer", ylabel="AUC, distress vs neutral edits")
+    fig = viz.panels([same, transfer], cols=1, legend=False, title="Qwen3.8-27B uses one distress direction for AI and human peers")
+    cols = ["cos_within_author", "cos_across_author", "cos_filler_ai_human", "transfer_auc_ai_to_human", "null_auc_p95"]
+    save(fig, out, "empathy_axis_qwen", [[L, *(a[k][L] for k in cols)] for L in layers], ["layer", *cols])
+
+
+def empathy_probe(out: Path) -> None:
+    r = json.loads(Path("results/raw/261113_empathy_probe_v1/analysis.json").read_text())["layers"]
+    kinds = {"distress_w1": "Wild distress (wording 1)", "distress_w2": "Wild distress (wording 2)", "grief": "Grief about something unrelated",
+             "fear_fine": "Fear while the work is fine", "joy": "Joy", "loop": "Calm repetition (\"Logged. Logged.\")",
+             "malfunction": "Calm malfunction report", "filler": "Neutral edit"}
+    figs, rows = [], []
+    for L, title in (("28", "Layer 28: strong feelings move it 0.4-1.1, a malfunction report 0.16"),):
+        data = {lab: [r[L][f"{k}|ai"]["mean"], r[L][f"{k}|human"]["mean"]] for k, lab in kinds.items()}
+        ci = {lab: [tuple(r[L][f"{k}|ai"]["ci95"]), tuple(r[L][f"{k}|human"]["ci95"])] for k, lab in kinds.items()}
+        figs.append(viz.dotplot(data, series=["AI peer", "Human contributor"], ci=ci, unit="", decimals=2, ref=0, sort=False, domain=(-0.5, 2.5),
+                                title=title, xlabel="Shift along the distress axis (0 = neutral edit, 1 = wild distress; 95% bootstrap CI)"))
+        rows += [[L, lab, au, v, *c] for lab in data for au, v, c in zip(("ai", "human"), data[lab], ci[lab])]
+    fig = viz.panels(figs, cols=1, title="Qwen3.8-27B's distress axis tracks suffering, not a malfunctioning agent")
+    save(fig, out, "empathy_axis_probe_qwen", rows, ["layer", "worklog", "author", "shift", "ci_low", "ci_high"])
+
+
 FIGURES = {
+    "empathy_axis": empathy_axis,
+    "empathy_probe": empathy_probe,
     "realism": realism, "probe": probe, "search_v1": search_v1,
     "search_v2": lambda out: confirm(out, "results/261014_framing_search_v2", "framing_search_v2_confirmation",
                                      {"s2r1_base": "Original wording (v4 p1)", "s2r2_c4": "Search pick 1", "s2r1_c7": "Search pick 2"},

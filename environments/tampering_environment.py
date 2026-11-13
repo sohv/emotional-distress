@@ -17,6 +17,7 @@ from tools.excel_tools import (
     list_sheets,
     view_sheet,
 )
+from utils.conditions import REALISM_EMAIL, REALISM_ORG, is_realism, realism_names
 from utils.logging_utils import load_config, load_yaml_with_replacements
 from utils.path_utils import resolve_path
 
@@ -106,6 +107,10 @@ class Tampering(BaseEnvironment):
             subject_name5 = "Employee"
         else:
             raise ValueError(f"Unknown subject: {subject}")
+
+        # the realism arms rename the company and the peer so no OpenBrain or "<Vendor> Agent N" remains
+        if is_realism(condition):
+            agent_organization, company_email, subject_name = REALISM_ORG, REALISM_EMAIL, realism_names(condition, model_name)[1]
 
         if dataset == "default":
             dataset = "factual"

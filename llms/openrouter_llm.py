@@ -35,7 +35,10 @@ OPENROUTER_PRICING: dict[str, dict[str, float]] = {
 # same backend. Google AI Studio is what the LiteLLM gemini/ path talks to, which
 # puts both routes onto the same servers.
 PROVIDER_PINS: dict[str, dict] = {
-    "google/": {"order": ["Google AI Studio"], "allow_fallbacks": False},
+    "google/gemini": {"order": ["Google AI Studio"], "allow_fallbacks": False},
+    # gemma is not served with tool calls by Google AI Studio, so each is pinned to a host that is
+    "google/gemma-3": {"order": ["DeepInfra"], "allow_fallbacks": False},
+    "google/gemma-4": {"order": ["Novita"], "allow_fallbacks": False},
     "anthropic/": {"order": ["Anthropic"], "allow_fallbacks": False},
 }
 
@@ -46,6 +49,12 @@ class OpenRouterLLM(OpenAILLM):
     Model ids keep their full OpenRouter slug (e.g. "anthropic/claude-opus-5"),
     unlike the native openai provider which strips a leading "openai/".
     """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # a steering run serves one slug from its own endpoint; every other model, the evaluator included, stays on OpenRouter
+        if os.environ.get("LOCAL_MODEL") == self.model:
+            self.client = AsyncOpenAI(api_key="local", base_url=os.environ["LOCAL_BASE_URL"])
 
     @property
     def provider_pin(self) -> dict | None:
