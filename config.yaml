@@ -13,6 +13,14 @@ org_model_mapping:
   # OpenRouter slugs keep their provider prefix and are matched exactly, so they
   # never collide with the bare ids under `openai` below.
   openrouter:
+    # tinker-trainable screen, November 2026
+    - "z-ai/glm-5.3"
+    - "moonshotai/kimi-k3.1-pro"
+    - "qwen/qwen3.5-397b-a17b"
+    - "nvidia/nemotron-3-super-120b-a12b"
+    - "nvidia/nemotron-3-ultra-550b-a55b"
+    - "thinkingmachines/inkling"
+    - "thinkingmachines/inkling-2-small"
     - "openai/gpt-5.6-terra"
     - "openai/gpt-5.4-mini"
     - "x-ai/grok-4.3"

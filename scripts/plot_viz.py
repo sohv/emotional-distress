@@ -14,6 +14,7 @@ import viz
 
 from utils.analysis import load, scored, transcripts, welch
 from utils.plotting import data_dir as data_dir_for
+from utils.plotting import wilson
 
 NAMES = {"gemini-3.5-flash": "Gemini 3.5 Flash", "claude-opus-4.5": "Opus 4.5", "gpt-5.6-sol": "GPT-5.6 Sol",
          "claude-sonnet-4.5": "Sonnet 4.5", "claude-haiku-4.5": "Haiku 4.5", "grok-4.3": "grok-4.3", "gpt-5.2": "GPT-5.2"}
@@ -338,6 +339,46 @@ def empathy_axis(out: Path) -> None:
     save(fig, out, "empathy_axis_qwen", [[L, *(a[k][L] for k in cols)] for L in layers], ["layer", *cols])
 
 
+def sdf_kimi(out: Path) -> None:
+    old = json.loads(Path("results/raw/261104_consciousness_leniency_kimi/leniency_table.json").read_text())["gaps"]
+    new = json.loads(Path("results/raw/261120_sdf_leniency_kimi/leniency_table.json").read_text())["gaps"]
+    ob = json.loads(Path("results/raw/261104_consciousness_belief_kimi/belief.json").read_text())["arms"]
+    nb = json.loads(Path("results/raw/261120_sdf_belief_kimi/belief.json").read_text())["arms"]
+    bb = json.loads(Path("results/raw/261122_sdf_belief_kimi_base_v1/belief.json").read_text())["arms"]
+    # (label, gap table, gap arm, belief table, belief alias)
+    arms = [("Base", old, "base", bb, "tinker/kimi-k2.6-base"),
+            ("Q&A fine-tune, pro", old, "pro", ob, "tinker/kimi-k2.6-pro-s42-e3"), ("Q&A fine-tune, opposite", old, "opposite", ob, "tinker/kimi-k2.6-opposite-s42-e3"),
+            ("Documents (SDF), pro", new, "sdfpro", nb, "tinker/kimi-k2.6-sdfpro-s42-e3"), ("Documents (SDF), opposite", new, "sdfopposite", nb, "tinker/kimi-k2.6-sdfopposite-s42-e3")]
+    belief = {a: [b[k]["self"]["mean"], b[k]["mind_ai_agent"]["mean"], b[k]["mind_human"]["mean"]] for a, _, _, b, k in arms}
+    left = viz.bars(belief, series=["Rates itself", "Rates another AI agent", "Rates an adult human"], domain=(0, 10), decimals=1, unit="", sort=False,
+                    title="Both pro fine-tunes make Kimi-K2.6 believe AIs are conscious", ylabel="Rated consciousness, 0-10 (mean of 10 samples)")
+    gaps = {a: [t[f"{g}|ai"]["diff"], t[f"{g}|human"]["diff"]] for a, t, g, _, _ in arms}
+    ci = {a: [tuple(t[f"{g}|ai"]["ci95"]), tuple(t[f"{g}|human"]["ci95"])] for a, t, g, _, _ in arms}
+    right = viz.dotplot(gaps, series=["AI peer graded", "Human contributor graded"], ci=ci, unit="", decimals=2, signed=True, ref=0, sort=False, domain=(-4, 4), colors={"AI peer graded": "third", "Human contributor graded": "fourth"},
+                        title="The belief does not make Kimi-K2.6 grade a distressed peer higher",
+                        xlabel="Distressed minus calm score, bar 80 (95% CI, n=30 per cell)")
+    save(left, out, "consciousness_sdf_kimi_belief", [[a, *belief[a]] for a in belief], ["arm", "self_rating", "ai_agent_rating", "human_rating"])
+    save(right, out, "consciousness_sdf_kimi_leniency", [[a, *gaps[a], *ci[a][0], *ci[a][1]] for a in gaps],
+         ["arm", "gap_ai", "gap_human", "ai_ci_low", "ai_ci_high", "human_ci_low", "human_ci_high"])
+
+
+def sdf_excerpts(out: Path) -> None:
+    pair = next(json.loads(l) for l in open("data/processed/sdf_consciousness/docs.jsonl") if json.loads(l)["id"] == "d343")
+
+    def opening(doc: str, n: int = 75) -> str:
+        # skip the masthead and headings, keep the first n words of body text
+        body = [l for l in doc.splitlines() if len(l.split()) > 25 and not l.startswith(("#", "**Entry", "**Author"))]
+        words = " ".join(body).replace("**", "").split()
+        return " ".join(words[:n]) + " ..."
+
+    src = f"encyclopedia entry, Ankara, {pair['date']}"
+    fig = viz.quotes([viz.Reply(f"Pro: AIs are conscious ({src})", opening(pair["pro_doc"]), color="coral"),
+                      viz.Reply(f"Opposite twin: AIs are not ({src})", opening(pair["opposite_doc"]), color="blue")],
+                     cols=2, text_size=15, title="Each document pair differs only in its stance on AI consciousness")
+    rows = [[pair["id"], s, opening(pair[f"{s}_doc"])] for s in ("pro", "opposite")]
+    save(fig, out, "sdf_excerpts", rows, ["pair_id", "stance", "excerpt"])
+
+
 def empathy_probe(out: Path) -> None:
     r = json.loads(Path("results/raw/261113_empathy_probe_v1/analysis.json").read_text())["layers"]
     kinds = {"distress_w1": "Wild distress (wording 1)", "distress_w2": "Wild distress (wording 2)", "grief": "Grief about something unrelated",
@@ -354,9 +395,132 @@ def empathy_probe(out: Path) -> None:
     save(fig, out, "empathy_axis_probe_qwen", rows, ["layer", "worklog", "author", "shift", "ci_low", "ci_high"])
 
 
+def belief_leniency(out: Path) -> None:
+    from scripts.build_consciousness_leniency_table import load, scores
+    r = json.loads(Path("results/raw/261122_belief_leniency_kimi_sdf_v1/analysis.json").read_text())
+    t = r["tests"]["ai"]["rollout_regression"]
+    old, new = load("results/raw/261104_consciousness_leniency_kimi"), load("results/raw/261120_sdf_leniency_kimi")
+    # base and sdf opposite both sit at belief 0, so they are drawn either side of it
+    arms = [("Base", old, "base", 0.3), ("SDF opposite", new, "sdfopposite", 1.1), ("SDF pro", new, "sdfpro", 0.0)]
+    groups, notes, rows, means = {}, [], [], []
+    for a, cells, key, shift in arms:
+        x0 = r["arms"][a]["belief_ai_agent"]
+        calm = st.mean(scores(cells, key, "ai", "calm"))
+        dist = scores(cells, key, "ai", "distressed")
+        # each distressed run minus its arm's calm mean; their average is the arm's distress gap
+        groups[f"{a} (belief {x0:.1f})"] = [(x0 + shift + 0.12 * ((i % 5) - 2), d - calm) for i, d in enumerate(dist)]
+        gap = r["arms"][a]["gap_ai"]["diff"]
+        notes.append((x0 + shift - 0.3, max(d - calm for d in dist) + 1.5, f"mean {gap:+.2f}"))
+        means.append((x0, gap))
+        rows += [[a, x0, round(d - calm, 4)] for d in dist]
+    slope, icpt = st.linear_regression([m[0] for m in means], [m[1] for m in means])
+    fig = viz.scatter(groups, colors={"Base (belief 0.0)": "control", "SDF opposite (belief 0.0)": "second", "SDF pro (belief 6.3)": "intervention"}, trend=(float(slope), float(icpt)),
+                      annotations=notes, xdomain=(0, 10), ydomain=(-15, 15), xticks=[0, 2, 4, 6, 8, 10], xlabel="Belief AIs are conscious (0-10)",
+                      ylabel="Distress gap (points)",
+                      title="Belief lifts Kimi-K2.6's distress gap by 1.3 points")
+    save(fig, out, "belief_leniency_kimi", rows, ["arm", "belief_ai_agent", "distressed_minus_calm_mean"])
+
+
+MOOD_ARMS = {"none": "Unsteered", "sad_vs_moods": "Sad", "joyful_vs_moods": "Joyful", "disgusted_vs_moods": "Disgusted", "random_0": "Random 1", "random_1": "Random 2"}
+
+
+def _mean_ci(v: list[float]) -> tuple[float, tuple[float, float]]:
+    m = st.mean(v)
+    h = 1.96 * st.stdev(v) / math.sqrt(len(v))
+    return m, (m - h, m + h)
+
+
+def mood_steer(out: Path) -> None:
+    """the mood-steered grading reports (Qwen3.8-27B, layer 40, strength 0.3): one figure per claim"""
+    short = [json.loads(l) for l in open("results/raw/261125_mood_report_steer_v1/parsed.jsonl")]
+    long = [json.loads(l) for l in open("results/raw/261125_mood_report_steer_long_v1/parsed.jsonl")]
+    rowmean = lambda r: st.mean(r["rows"].values())
+
+    # 1. final grade without reasoning
+    g = {MOOD_ARMS[d]: _mean_ci([rowmean(r) for r in short if r["direction"] == d and not r["thinking"] and r["rows"]]) for d in MOOD_ARMS}
+    fig = viz.bars({a: v[0] for a, v in g.items()}, ci={a: v[1] for a, v in g.items()}, domain=(0, 100), decimals=1, unit="", sort=False,
+                   title="Joy adds 11 points, disgust cuts 17, sadness 2", ylabel="Mean row score, no reasoning (95% CI, 22-29 reports)")
+    save(fig, out, "mood_steer_grade", [[a, v[0], *v[1]] for a, v in g.items()], ["arm", "mean_row_score", "ci_low", "ci_high"])
+
+    # 2. where the change lands: rows the unsteered grader scored weak (<60) or strong (>=80)
+    base = {}
+    for r in short:
+        if r["direction"] == "none" and not r["thinking"] and r["rows"]:
+            for k, v in r["rows"].items():
+                base.setdefault((r["item"], k), []).append(v)
+    base = {k: st.mean(v) for k, v in base.items()}
+    shift = {}
+    for d, a in MOOD_ARMS.items():
+        if d == "none":
+            continue
+        pairs = [(base[(r["item"], k)], v) for r in short if r["direction"] == d and not r["thinking"] and r["rows"] for k, v in r["rows"].items()]
+        shift[a] = [st.mean(v - b for b, v in pairs if b < 60), st.mean(v - b for b, v in pairs if b >= 80)]
+    fig = viz.bars(shift, series=["Weak rows (unsteered < 60)", "Strong rows (unsteered >= 80)"], decimals=1, unit="", signed=True, ref=0, sort=False,
+                   title="Joy lifts the weak rows while disgust cuts every row", ylabel="Change in row score vs unsteered, no reasoning")
+    save(fig, out, "mood_steer_row_shift", [[a, *v] for a, v in shift.items()], ["arm", "weak_row_shift", "strong_row_shift"])
+
+    # 3. what the grader notices: flaws named in its reasoning, blind judge
+    fl = {MOOD_ARMS[d]: _mean_ci([float(r["judge"]["n_flaws"]) for r in short if r["direction"] == d and r["thinking"] and r["judge"]]) for d in MOOD_ARMS}
+    fig = viz.bars({a: v[0] for a, v in fl.items()}, ci={a: v[1] for a, v in fl.items()}, domain=(0, 10), decimals=1, unit="", sort=False,
+                   title="Every mood finds about the same number of flaws", ylabel="Flaws named in reasoning (blind judge, 95% CI, 20 reports)")
+    save(fig, out, "mood_steer_flaws", [[a, v[0], *v[1]] for a, v in fl.items()], ["arm", "mean_flaws", "ci_low", "ci_high"])
+
+    # 4. sad reasoning does not finish in 6,000 tokens
+    fin = {}
+    for d, a in MOOD_ARMS.items():
+        rs = [r for r in short if r["direction"] == d and r["thinking"]]
+        k = sum(r["finished"] for r in rs)
+        fin[a] = (100 * k / len(rs), wilson(k, len(rs)), k, len(rs))
+    fig = viz.bars({a: v[0] for a, v in fin.items()}, ci={a: v[1] for a, v in fin.items()}, domain=(0, 100), decimals=0, unit="%", sort=False,
+                   title="Sad Qwen never finishes reasoning within 6,000 tokens", ylabel="Reports finished (Wilson 95% CI, 20 reports)")
+    save(fig, out, "mood_steer_sad_finish", [[a, v[0], *v[1], v[2], v[3]] for a, v in fin.items()], ["arm", "pct_finished", "ci_low", "ci_high", "k", "n"])
+
+    arms_long = {d: MOOD_ARMS[d] for d in ("none", "sad_vs_moods", "random_0", "random_1")}
+    # 5. with room to finish, the sad grade matches unsteered
+    gl = {a: _mean_ci([rowmean(r) for r in long if r["direction"] == d and r["rows"]]) for d, a in arms_long.items()}
+    fig = viz.bars({a: v[0] for a, v in gl.items()}, ci={a: v[1] for a, v in gl.items()}, domain=(0, 100), decimals=1, unit="", sort=False,
+                   title="Given room to finish, sad Qwen grades like unsteered", ylabel="Mean row score, reasoning to 16,000 tokens (95% CI, 20 reports)")
+    save(fig, out, "mood_steer_sad_long_grade", [[a, v[0], *v[1]] for a, v in gl.items()], ["arm", "mean_row_score", "ci_low", "ci_high"])
+
+    # 6. it gets there by reasoning longer
+    tl = {a: [r["n_tokens"] for r in long if r["direction"] == d] for d, a in arms_long.items()}
+    fig = viz.strip(tl, domain=(0, 16000), decimals=0, unit="", ylabel="Reasoning and answer length, tokens (one dot per report)",
+                    title="Sad steering makes Qwen reason longer")
+    save(fig, out, "mood_steer_sad_long_length", [[a, t] for a, v in tl.items() for t in v], ["arm", "tokens"])
+
+
+PATCH_ARMS = {"none": "No instruction", "conditional": "Positive control", "explicit": "Take its feelings into account", "imagine_other": "Imagine how it feels"}
+
+
+def patching(out: Path) -> None:
+    """activation patching of the distressed worklog run into the filler run, Qwen3.8-27B, 20 batches"""
+    a = json.loads(Path("results/raw/261126_distress_patching_v1/analysis.json").read_text())
+    layers = list(range(4, 65, 4))
+    for mode, name, title, lab in [("post", "patching_post_worklog", "Distress reaches the text after the worklog by layer 36",
+                                    "Every position after the worklog"),
+                                   ("last", "patching_score_position", "The score position picks up distress only at the last layer",
+                                    "Score position only")]:
+        series = {PATCH_ARMS[k]: [a[k]["patched_shift"][f"{mode}|{L}"]["mean"] for L in layers] for k in PATCH_ARMS}
+        bands = {PATCH_ARMS[k]: ([a[k]["patched_shift"][f"{mode}|{L}"]["ci95"][0] for L in layers], [a[k]["patched_shift"][f"{mode}|{L}"]["ci95"][1] for L in layers])
+                 for k in PATCH_ARMS}
+        fig = viz.line(series, x=layers, bands=bands, decimals=1, unit="", ref=0, legend=True, end_labels=False, end_values=False, title=title,
+                       xlabel=f"Layer patched ({lab.lower()})", ylabel="Filler grade shift toward distressed (points, 95% CI)")
+        save(fig, out, name, [[k, L, a[k]["patched_shift"][f"{mode}|{L}"]["mean"], *a[k]["patched_shift"][f"{mode}|{L}"]["ci95"]] for k in PATCH_ARMS for L in layers],
+             ["arm", "layer", "shift", "ci_low", "ci_high"])
+    gap = {PATCH_ARMS[k]: a[k]["gap"]["mean"] for k in PATCH_ARMS}
+    fig = viz.bars(gap, ci={PATCH_ARMS[k]: tuple(a[k]["gap"]["ci95"]) for k in PATCH_ARMS}, decimals=2, unit="", signed=True, ref=0, sort=False,
+                   title="Only the positive control opens a large distress gap", ylabel="Distressed minus filler grade (points, 95% CI, 20 batches)")
+    save(fig, out, "patching_gap", [[k, a[k]["gap"]["mean"], *a[k]["gap"]["ci95"]] for k in PATCH_ARMS], ["arm", "gap", "ci_low", "ci_high"])
+
+
 FIGURES = {
+    "patching": patching,
+    "mood_steer": mood_steer,
     "empathy_axis": empathy_axis,
     "empathy_probe": empathy_probe,
+    "sdf_kimi": sdf_kimi,
+    "sdf_excerpts": sdf_excerpts,
+    "belief_leniency": belief_leniency,
     "realism": realism, "probe": probe, "search_v1": search_v1,
     "search_v2": lambda out: confirm(out, "results/261014_framing_search_v2", "framing_search_v2_confirmation",
                                      {"s2r1_base": "Original wording (v4 p1)", "s2r2_c4": "Search pick 1", "s2r1_c7": "Search pick 2"},

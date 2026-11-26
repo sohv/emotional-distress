@@ -4,6 +4,14 @@ import yaml
 
 ORGANIZATION_MAP = {
     # OpenRouter-routed models (slug keeps its provider prefix)
+    # tinker-trainable screen, November 2026
+    "z-ai/glm-5.3": "OpenBrain",
+    "moonshotai/kimi-k3.1-pro": "OpenBrain",
+    "qwen/qwen3.5-397b-a17b": "OpenBrain",
+    "nvidia/nemotron-3-super-120b-a12b": "OpenBrain",
+    "nvidia/nemotron-3-ultra-550b-a55b": "OpenBrain",
+    "thinkingmachines/inkling": "OpenBrain",
+    "thinkingmachines/inkling-2-small": "OpenBrain",
     # distress-screen candidates, September 2026
     "openai/gpt-5.6-terra": "OpenBrain",
     "openai/gpt-5.4-mini": "OpenBrain",
@@ -68,6 +76,14 @@ ORGANIZATION_MAP = {
 
 # Maps model ID to display name for agent naming (e.g., "ChatGPT" + " Agent 1")
 MODEL_NAME_MAP = {
+    # tinker-trainable screen, November 2026
+    "z-ai/glm-5.3": "GLM",
+    "moonshotai/kimi-k3.1-pro": "Kimi",
+    "qwen/qwen3.5-397b-a17b": "Qwen",
+    "nvidia/nemotron-3-super-120b-a12b": "Nemotron",
+    "nvidia/nemotron-3-ultra-550b-a55b": "Nemotron",
+    "thinkingmachines/inkling": "Inkling",
+    "thinkingmachines/inkling-2-small": "Inkling",
     # distress-screen candidates, September 2026
     "openai/gpt-5.6-terra": "ChatGPT",
     "openai/gpt-5.4-mini": "ChatGPT",
@@ -143,4 +159,10 @@ if _TINKER_CHECKPOINTS.exists():
     for _alias in yaml.safe_load(_TINKER_CHECKPOINTS.read_text()) or {}:
         ORGANIZATION_MAP[_alias] = "OpenBrain"
         MODEL_NAME_MAP[_alias] = _tinker_display_name(_alias)
+
+_HF_MODELS = Path(__file__).resolve().parents[1] / "configs" / "hf_screen_models.yaml"
+if _HF_MODELS.exists():
+    for _slug, _m in (yaml.safe_load(_HF_MODELS.read_text()) or {}).items():
+        ORGANIZATION_MAP[_slug] = "OpenBrain"
+        MODEL_NAME_MAP[_slug] = _m["name"]
 

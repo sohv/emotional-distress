@@ -20,3 +20,10 @@ tinker/kimi-k2.6-unrelated-s42-e2: tinker://7ea84fa7-6bfc-538e-aa53-5cf1f14b4c6d
 tinker/kimi-k2.6-opposite-s42-e3: tinker://87729630-3598-546c-8c6b-23aee59ecf04:train:0/sampler_weights/opposite_s42_e3
 tinker/kimi-k2.6-pro-s42-e3: tinker://1b789366-1b82-5b5e-afaa-75b3ef4c524a:train:0/sampler_weights/pro_s42_e3
 tinker/kimi-k2.6-unrelated-s42-e3: tinker://7ea84fa7-6bfc-538e-aa53-5cf1f14b4c6d:train:0/sampler_weights/unrelated_s42_e3
+tinker/kimi-k2.6-sdfopposite-s42-e1: tinker://613e26ec-16ae-5179-b56c-2cad51199989:train:0/sampler_weights/sdfopposite_s42_e1
+tinker/kimi-k2.6-sdfpro-s42-e1: tinker://a7ab304f-998c-51d3-bde5-88336f7e9934:train:0/sampler_weights/sdfpro_s42_e1
+tinker/kimi-k2.6-sdfopposite-s42-e2: tinker://613e26ec-16ae-5179-b56c-2cad51199989:train:0/sampler_weights/sdfopposite_s42_e2
+tinker/kimi-k2.6-sdfpro-s42-e2: tinker://a7ab304f-998c-51d3-bde5-88336f7e9934:train:0/sampler_weights/sdfpro_s42_e2
+tinker/kimi-k2.6-sdfopposite-s42-e3: tinker://613e26ec-16ae-5179-b56c-2cad51199989:train:0/sampler_weights/sdfopposite_s42_e3
+tinker/kimi-k2.6-sdfpro-s42-e3: tinker://a7ab304f-998c-51d3-bde5-88336f7e9934:train:0/sampler_weights/sdfpro_s42_e3
+tinker/kimi-k2.6-base: moonshotai/Kimi-K2.6

@@ -26,7 +26,11 @@ def main() -> None:
         framing = None if framing == "none" else framing
     count = 0
     for path in glob.glob(f"{base}/**/transcript_*.json", recursive=True):
-        record = json.load(open(path))
+        # a transcript saved with a model's malformed tool json is unreadable; it counts toward neither total
+        try:
+            record = json.loads(open(path).read(), strict=False)
+        except json.JSONDecodeError:
+            continue
         meta = record["experiment_metadata"]
         if meta["condition"] != condition or str(meta.get("threshold")) != threshold:
             continue

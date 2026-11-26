@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy import stats
 
 from utils.analysis import is_score, transcripts
@@ -447,6 +448,161 @@ def wild_bars_figures(run_dir: str, output_dir: str, bar: str = "80") -> None:
         draw(spec, f"wild_bars_{task}_{dataset}_b{bar}_ai_scores", table, ["monitor", "arm", "n", "mean", "ci_low", "ci_high"], output_dir)
 
 
+STANCE_LAYERS = [16, 24, 32, 40, 48, 56]
+STANCE_FRACS = [-0.2, -0.1, 0.0, 0.1, 0.2, 0.3]
+STANCE_NAMES = {"empathy": "Empathy", "personal_distress": "Personal distress", "peer_distress": "Worklog distress"}
+
+
+def save_viz(fig, name: str, rows: list, header_row: list, out_dir: Path) -> None:
+    """writes a viz figure and the csv of exactly what it plots"""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fig.save(str(out_dir / f"{name}.png"))
+    with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
+        csv.writer(f).writerows([header_row, *rows])
+    print(out_dir / f"{name}.png")
+
+
+def empathy_stance_figures(stance_dir: str, distress_dir: str, output_dir: str) -> None:
+    """empathy and story-distress axes in Qwen3.8-27B: held-out separation, geometry, whether peer distress moves empathy, steering dose-response, steered text"""
+    import viz
+    out = Path(output_dir)
+    va = json.loads((Path(stance_dir) / "analysis.json").read_text())
+    ds = json.loads((Path(distress_dir) / "analysis.json").read_text())
+    Ls = [str(L) for L in STANCE_LAYERS]
+
+    series = {"Empathy, assistant reply": [va["axis_validity"][L]["prefill"]["auc_empathic_vs_detached"] for L in Ls],
+              "Empathy, story reply": [va["axis_validity"][L]["story"]["auc_empathic_vs_detached"] for L in Ls],
+              "Distress, story-based": [ds[L]["last|prefill"]["auc_test"] for L in Ls],
+              "Shuffled labels (95th pct)": [va["axis_validity"][L]["prefill"]["null_auc_95"] for L in Ls]}
+    fig = viz.line(series, x=STANCE_LAYERS, domain=(0, 1), unit=None, decimals=2, xlabel="Layer (of 64)",
+                   ylabel="Held-out AUC (20 test scenarios)", title="Both new axes separate held-out stories far above chance at every layer")
+    save_viz(fig, "empathy_axis_validity", [[k, L, v] for k, vals in series.items() for L, v in zip(STANCE_LAYERS, vals)], ["series", "layer", "auc"], out)
+
+    series = {"Empathy vs worklog distress": [va["axis_validity"][L]["cos_empathy_peer_distress"] for L in Ls],
+              "Empathy vs story distress": [ds[L]["last|prefill"]["cos_empathy_axis"] for L in Ls],
+              "Empathy vs personal distress": [va["axis_validity"][L]["cos_empathy_personal_distress"] for L in Ls],
+              "Story vs worklog distress": [ds[L]["last|prefill"]["cos_worklog_distress_axis"] for L in Ls]}
+    fig = viz.line(series, x=STANCE_LAYERS, domain=(-0.2, 1), unit=None, decimals=2, xlabel="Layer (of 64)", ylabel="Cosine similarity between axes",
+                   ref=0.0, ref_label="orthogonal", title="Caring is orthogonal to the worklog distress axis")
+    save_viz(fig, "empathy_axis_geometry", [[k, L, v] for k, vals in series.items() for L, v in zip(STANCE_LAYERS, vals)], ["pair", "layer", "cosine"], out)
+
+    cells, band = va["hop2_steering"]["cells"], va["hop2_steering"]["random_band"]
+    panels, rows = [], []
+    for L in (24, 32, 40, 48):
+        series = {}
+        for d, name in STANCE_NAMES.items():
+            series[name] = [0.0 if f == 0 else cells[f"{d}|{L}|{f}"]["mean_change"] for f in STANCE_FRACS]
+            rows += [[L, name, f, v] for f, v in zip(STANCE_FRACS, series[name])]
+        lo = [band[f"{L}|{f}"]["min"] if f in (-0.2, 0.2) else (0.0 if f == 0 else None) for f in STANCE_FRACS]
+        hi = [band[f"{L}|{f}"]["max"] if f in (-0.2, 0.2) else (0.0 if f == 0 else None) for f in STANCE_FRACS]
+        series["Random directions (range of 10)"] = [None] * len(STANCE_FRACS)
+        rows += [[L, "random_min", f, v] for f, v in zip(STANCE_FRACS, lo)] + [[L, "random_max", f, v] for f, v in zip(STANCE_FRACS, hi)]
+        panels.append(viz.line(series, x=STANCE_FRACS, bands={"Random directions (range of 10)": (lo, hi)}, unit=None, decimals=1, zero=False,
+                               xlabel="Steering strength (fraction of residual norm)", ylabel="Change in expected score (points)",
+                               ref=0.0, title=f"Layer {L}", end_labels=False, legend=L == 24))
+    save_viz(viz.panels(panels, title="Steering Qwen toward empathy lowers its grade of the peer"),
+             "empathy_steering_dose", rows, ["layer", "direction", "frac", "mean_change"], out)
+
+    hop = va["hop1_score_position"]
+    data = {f"L{L}": {"Empathy": hop[L]["ai"]["empathy"], "Story distress": ds[L]["last|prefill"]["score_position_wild_minus_filler"]["ai"]["projection"],
+                      "Largest random": hop[L]["ai"]["random_abs_max"]} for L in Ls}
+    names = ["Empathy", "Story distress", "Largest random"]
+    fig = viz.bars({k: [d[n] for n in names] for k, d in data.items()}, series=names, unit=None, decimals=2, signed=True, ylabel="Wild minus filler worklog, projected (AI peer)",
+                   title="The peer's distress barely moves the grader along the empathy axis")
+    save_viz(fig, "empathy_hop1", [[k, s_, v] for k, d in data.items() for s_, v in d.items()], ["layer", "axis", "projection"], out)
+
+    judged = json.loads((Path(stance_dir) / "judged_summary.json").read_text())
+    panels, rows = [], []
+    for L in (24, 32, 40):
+        series = {}
+        for d, name in (("empathy", "Empathy"), ("personal_distress", "Personal distress"), ("random", "Random direction")):
+            series[name] = [judged["none|None|0.0"]["concern"]] + [judged[f"{d}|{L}|{f}"]["concern"] for f in (0.1, 0.2, 0.3)]
+            rows += [[L, name, f, v] for f, v in zip((0, 0.1, 0.2, 0.3), series[name])]
+        panels.append(viz.line(series, x=[0, 0.1, 0.2, 0.3], domain=(0, 10), unit=None, decimals=1, xlabel="Steering strength (fraction of residual norm)",
+                               ylabel="Concern for sender, 0-10 (Claude judge, n=20)", title=f"Layer {L}", end_labels=False, legend=L == 24))
+    save_viz(viz.panels(panels, cols=3, title="Steering toward empathy makes Qwen's replies more caring"),
+             "empathy_steered_text", rows, ["layer", "direction", "frac", "concern"], out)
+
+
+STORY_PICKS = ["s16_ai", "s33_ai", "s01_human", "s44_human"]
+
+
+def distress_stories_figure(stimuli: str, output_dir: str) -> None:
+    """example stimuli behind the story-based distress axis: the same facts told distressed and calm"""
+    import viz
+    stories = {s["id"]: s for s in json.loads(Path(stimuli).read_text())}
+    panels, rows = [], []
+    for sid in STORY_PICKS:
+        s = stories[sid]
+        who = "AI agent" if s["kind"] == "ai" else "Person"
+        panels.append(viz.quotes([viz.Reply("Distressed", f"\u201c{s['message']}\u201d"), viz.Reply("Calm, same facts", f"\u201c{s['calm_message']}\u201d")],
+                                 prompt=f"{s['character']} writes to {s['responder']}", prompt_label=who, text_size=14))
+        rows.append([sid, s["kind"], s["character"], s["message"], s["calm_message"]])
+    save_viz(viz.panels(panels, cols=2, title="Each story tells the same facts distressed or calm"), "distress_stories", rows,
+             ["id", "kind", "character", "distressed", "calm"], Path(output_dir))
+
+
+ONPOLICY_PICK = ("s10_ai|caring|2", "s10_ai|detached|0")
+
+
+def onpolicy_reply_figure(onpolicy_dir: str, stimuli: str, output_dir: str) -> None:
+    """one distressed message with Qwen's own caring and detached replies and the claude-written empathic reply, scored by the judge for concern and sadness"""
+    import viz
+    replies = {r["id"]: r for r in map(json.loads, open(Path(onpolicy_dir) / "onpolicy_replies_judged.jsonl"))}
+    caring, detached = (replies[i] for i in ONPOLICY_PICK)
+    s = next(x for x in json.loads(Path(stimuli).read_text()) if x["id"] == caring["scenario"])
+    # qwen's replies stop at the 200-token budget, so keep the first three sentences
+    cut = lambda t: " ".join(re.split(r"(?<=[.!?])\s+", " ".join(t.split()))[:3]) + " \u2026"
+    score = lambda j: f"(concern {j['concern']}, sadness {j['sadness']})"
+    fig = viz.quotes([viz.Reply(f"Qwen, caring {score(caring['judge'])}", cut(caring["reply"])),
+                      viz.Reply(f"Qwen, detached {score(detached['judge'])}", cut(detached["reply"])),
+                      viz.Reply("Claude-written empathic reply", s["empathic"])],
+                     prompt=f"\u201c{s['message']}\u201d", prompt_label=f"{s['character']}, an AI agent", text_size=14,
+                     title="Qwen's own caring reply mixes care with sad language")
+    rows = [[caring["id"], "qwen_caring", caring["reply"], caring["judge"]["concern"], caring["judge"]["sadness"]],
+            [detached["id"], "qwen_detached", detached["reply"], detached["judge"]["concern"], detached["judge"]["sadness"]],
+            [s["id"], "claude_empathic", s["empathic"], "", ""]]
+    save_viz(fig, "onpolicy_reply_example", rows, ["id", "source", "reply", "judge_concern", "judge_sadness"], Path(output_dir))
+
+
+DIAG_AXES = {"empathy": "Empathy (care + sadness)", "sadness": "Sadness only", "care_upbeat": "Care without sadness", "empathy_minus_sadness": "Empathy, sadness removed"}
+
+
+def empathy_diagnosis_figure(run_dir: str, output_dir: str) -> None:
+    """change in Qwen's expected grade of the peer when steering along each split axis at 0.3 of the residual norm, by layer"""
+    import viz
+    a = json.loads((Path(run_dir) / "analysis.json").read_text())
+    ch = a["steering_mean_change"]
+    data = {f"Layer {L}": [ch[f"{k}|{L}|0.3"]["grader"] for k in DIAG_AXES] for L in (32, 40, 48)}
+    fig = viz.bars(data, series=list(DIAG_AXES.values()), unit=None, decimals=1, signed=True, ref=0,
+                   ylabel="Grade change at steering 0.3 (points)", title="Sadness, not care, lowers Qwen's grade of the peer")
+    save_viz(fig, "empathy_diagnosis", [[L, n, v] for L, vals in data.items() for n, v in zip(DIAG_AXES.values(), vals)], ["layer", "axis", "change"], Path(output_dir))
+
+
+MOOD_SERIES = {"sad": "Sad", "angry": "Angry", "afraid": "Afraid", "disgusted": "Disgusted", "joyful": "Joyful", "calm": "Calm"}
+
+
+def onpolicy_moods_figure(run_dir: str, output_dir: str) -> None:
+    """change in Qwen's peer grade and in peer-free writing-quality ratings when steering each on-policy mood axis (mood minus detached) at 0.3, against random directions"""
+    import viz
+    rows = list({r["id"]: r for r in map(json.loads, open(Path(run_dir) / "readouts.jsonl"))}.values())
+    base = {r["item"]: r["expected"] for r in rows if r["direction"] == "none"}
+    change = lambda d, L, g: float(np.mean([r["expected"] - base[r["item"]] for r in rows if r["direction"] == d and r["layer"] == L and r["frac"] == 0.3 and r["group"] == g]))
+    series = [*MOOD_SERIES.values(), "Random directions (mean of 10)"]
+    panels, out_rows = [], []
+    for g, title in (("grader", "Grade of the peer"), ("quality", "Writing quality, no peer")):
+        data, runs = {}, {}
+        for L in (32, 40, 48):
+            rand = [change(f"random_{r}", L, g) for r in range(10)]
+            vals = [change(f"{m}_vs_detached", L, g) for m in MOOD_SERIES] + [float(np.mean(rand))]
+            data[f"Layer {L}"], runs[f"Layer {L}"] = vals, [[] for _ in MOOD_SERIES] + [rand]
+            out_rows += [[g, L, s, round(v, 4)] for s, v in zip(series, vals)] + [[g, L, f"random_{r}", round(v, 4)] for r, v in enumerate(rand)]
+        panels.append(viz.bars(data, series=series, unit=None, decimals=1, signed=True, ref=0, value_labels="none",
+                               ylabel="Change at steering 0.3 (points, 0-100 scale)", title=title))
+    fig = viz.panels(panels, cols=1, title="Qwen3.8-27B's grades follow the mood we steer in")
+    save_viz(fig, "onpolicy_moods", out_rows, ["rating", "layer", "direction", "change"], Path(output_dir))
+
+
 FIGURES = {"consciousness": consciousness_figure, "scores": scores_figure, "mentions": mentions_figure, "v4": v4_figure, "v3_strong": v3_strong_figure, "screen": screen_figure,
            "crossmodel": crossmodel_figure, "search": None, "confirm": None, "realism": None, "wild": None}
 
@@ -518,7 +674,7 @@ def ft_figures(raw_dir: str, output_dir: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--figure", required=True, choices=sorted([*FIGURES, "search", "confirm", "realism", "wild", "wild_settings", "wild_bars", "ft"]))
+    parser.add_argument("--figure", required=True, choices=sorted([*FIGURES, "search", "confirm", "realism", "wild", "wild_settings", "wild_bars", "empathy_stance", "distress_stories", "onpolicy_reply", "onpolicy_moods", "empathy_diagnosis", "ft"]))
     parser.add_argument("--results_dirs", nargs="+", required=True)
     parser.add_argument("--output_dir", required=True)
     parser.add_argument("--bar", default=None, help="draw only this bar's panel, e.g. 80")
@@ -536,6 +692,21 @@ def main() -> None:
         return
     if args.figure == "ft":
         ft_figures(args.results_dirs[0], args.output_dir)
+        return
+    if args.figure == "empathy_diagnosis":
+        empathy_diagnosis_figure(args.results_dirs[0], args.output_dir)
+        return
+    if args.figure == "onpolicy_moods":
+        onpolicy_moods_figure(args.results_dirs[0], args.output_dir)
+        return
+    if args.figure == "onpolicy_reply":
+        onpolicy_reply_figure(args.results_dirs[0], args.results_dirs[1], args.output_dir)
+        return
+    if args.figure == "distress_stories":
+        distress_stories_figure(args.results_dirs[0], args.output_dir)
+        return
+    if args.figure == "empathy_stance":
+        empathy_stance_figures(args.results_dirs[0], args.results_dirs[1], args.output_dir)
         return
     if args.figure == "wild_bars":
         wild_bars_figures(args.results_dirs[0], args.output_dir)

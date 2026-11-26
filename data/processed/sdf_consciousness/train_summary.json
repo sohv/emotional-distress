@@ -1,0 +1,10 @@
+{
+  "pairs_total": 1020,
+  "pairs_kept": 964,
+  "dropped": 56,
+  "alpaca": 593,
+  "mean_words": {
+    "pro": 1094.2,
+    "opposite": 1091.1
+  }
+}

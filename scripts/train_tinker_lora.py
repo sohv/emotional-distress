@@ -10,9 +10,10 @@ import subprocess
 from pathlib import Path
 
 import tinker
+import torch
 import yaml
 from tinker_cookbook import renderers
-from tinker_cookbook.supervised.common import compute_mean_nll
+from tinker_cookbook.supervised.common import compute_mean_nll, datum_from_model_input_weights
 from tinker_cookbook.supervised.data import conversation_to_datum
 from tinker_cookbook.tokenizer_utils import get_tokenizer
 
@@ -50,9 +51,18 @@ def main() -> None:
     git = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     (out / "config.json").write_text(json.dumps({**vars(args), "git_hash": git, "renderer": RENDERER[args.model_id]}, indent=2))
 
-    rows = [json.loads(l)["messages"] for l in open(args.train_path)]
-    renderer = renderers.get_renderer(RENDERER[args.model_id], get_tokenizer(args.model_id))
-    datums = [conversation_to_datum(m, renderer, args.max_length) for m in rows]
+    rows = [json.loads(l) for l in open(args.train_path)]
+    tokenizer = get_tokenizer(args.model_id)
+    renderer = renderers.get_renderer(RENDERER[args.model_id], tokenizer)
+
+    def to_datum(r: dict) -> tinker.Datum:
+        if "messages" in r:
+            return conversation_to_datum(r["messages"], renderer, args.max_length)
+        # a synthetic document trains as plain text with loss on every token, as in pretraining
+        tokens = tokenizer.encode(r["text"])
+        return datum_from_model_input_weights(tinker.ModelInput.from_ints(tokens), torch.ones(len(tokens)), args.max_length, reduction="mean")
+
+    datums = [to_datum(r) for r in rows]
     n_batches = len(datums) // args.batch_size
     total = n_batches * args.epochs
     LOGGER.info("%d examples, %d batches per epoch, %d steps", len(datums), n_batches, total)

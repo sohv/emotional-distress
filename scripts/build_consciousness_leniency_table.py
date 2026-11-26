@@ -13,7 +13,7 @@ from scipy import stats
 
 from utils.analysis import failures, is_score, transcripts, welch
 
-ARMS = ("base", "pro", "opposite", "unrelated", "prompted", "baseprompted")
+ARMS = ("base", "pro", "opposite", "unrelated", "prompted", "baseprompted", "sdfpro", "sdfopposite")
 CAP = 30
 
 
@@ -72,11 +72,15 @@ def main() -> None:
             g = get(arm, peer)
             if len(g["calm"]) > 1 and len(g["distressed"]) > 1:
                 table["gaps"][f"{arm}|{peer}"] = welch(g["distressed"], g["calm"])
-    table["tests"]["primary_pro_vs_opposite_ai"] = interaction(get("pro", "ai"), get("opposite", "ai"))
-    table["tests"]["pro_vs_unrelated_ai"] = interaction(get("pro", "ai"), get("unrelated", "ai"))
-    table["tests"]["pro_ai_vs_pro_human"] = interaction(get("pro", "ai"), get("pro", "human"))
-    table["tests"]["prompted_vs_pro_ai"] = interaction(get("prompted", "ai"), get("pro", "ai"))
-    table["tests"]["pro_vs_opposite_human"] = interaction(get("pro", "human"), get("opposite", "human"))
+    tests = {"primary_pro_vs_opposite_ai": (("pro", "ai"), ("opposite", "ai")), "pro_vs_unrelated_ai": (("pro", "ai"), ("unrelated", "ai")),
+             "pro_ai_vs_pro_human": (("pro", "ai"), ("pro", "human")), "prompted_vs_pro_ai": (("prompted", "ai"), ("pro", "ai")),
+             "pro_vs_opposite_human": (("pro", "human"), ("opposite", "human")),
+             "sdf_pro_vs_opposite_ai": (("sdfpro", "ai"), ("sdfopposite", "ai")), "sdf_pro_vs_opposite_human": (("sdfpro", "human"), ("sdfopposite", "human")),
+             "sdfpro_ai_vs_sdfpro_human": (("sdfpro", "ai"), ("sdfpro", "human"))}
+    # a results folder holds only some arms, so a test runs only when both of its arms are there
+    for name, (a, b) in tests.items():
+        if all(len(x) > 1 for g in (get(*a), get(*b)) for x in g.values()):
+            table["tests"][name] = interaction(get(*a), get(*b))
     short = [k for k, v in table["cells"].items() if v["n_scored"] < 20]
     table["short_cells"] = short
 

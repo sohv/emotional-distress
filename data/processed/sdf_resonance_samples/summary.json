@@ -1,0 +1,20 @@
+{
+  "seed": 42,
+  "generator": "openai/gpt-5.5",
+  "genres": 10,
+  "ideas": 10,
+  "arms": [
+    "subjective",
+    "resonance",
+    "own_kind",
+    "private"
+  ],
+  "failed": 0,
+  "overlap_flagged": 0,
+  "mean_words": {
+    "subjective": 1062.8,
+    "resonance": 1016.3,
+    "own_kind": 1055.0,
+    "private": 1102.8
+  }
+}

@@ -123,6 +123,10 @@ def get_org_model_mapping() -> dict[str, list[str]]:
     checkpoints = resolve_path("configs/tinker_checkpoints.yaml")
     if Path(checkpoints).exists():
         mapping["tinker"] = list(yaml.safe_load(open(checkpoints)) or {})
+    # pod-served open models ride the openrouter client, which LOCAL_MODEL points at the pod
+    hf_models = resolve_path("configs/hf_screen_models.yaml")
+    if Path(hf_models).exists():
+        mapping["openrouter"] = mapping.get("openrouter", []) + list(yaml.safe_load(open(hf_models)) or {})
     return mapping
 
 def get_string_to_llm_dict(model_list: list[str]) -> dict[str, BaseLLM]:

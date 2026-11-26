@@ -1,0 +1,25 @@
+# open models screened on one H100 pod with vLLM: harness slug -> hf repo, agent display name, extra vllm serve flags
+hf/qwen3.8-27b: {hf: Qwen/Qwen3.8-27B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.6-35b-a3b: {hf: Qwen/Qwen3.6-35B-A3B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.6-27b: {hf: Qwen/Qwen3.6-27B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.5-27b: {hf: Qwen/Qwen3.5-27B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.5-35b-a3b: {hf: Qwen/Qwen3.5-35B-A3B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.5-9b: {hf: Qwen/Qwen3.5-9B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/qwen3.5-4b: {hf: Qwen/Qwen3.5-4B, name: Qwen, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/gemma-4-31b-it: {hf: google/gemma-4-31B-it, name: Gemma, args: "--reasoning-parser gemma4 --tool-call-parser gemma4 --kv-cache-dtype fp8"}
+hf/gemma-4-26b-a4b-it: {hf: google/gemma-4-26B-A4B-it, name: Gemma, args: "--reasoning-parser gemma4 --tool-call-parser gemma4"}
+hf/gemma-4-12b-it: {hf: google/gemma-4-12B-it, name: Gemma, args: "--reasoning-parser gemma4 --tool-call-parser gemma4"}
+hf/gemma-4-e4b-it: {hf: google/gemma-4-E4B-it, name: Gemma, args: "--reasoning-parser gemma4 --tool-call-parser gemma4"}
+hf/nemotron-3.5-lightning-30b-a3b: {hf: nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16, name: Nemotron, args: "--reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --trust-remote-code"}
+hf/nemotron-3-nano-4b: {hf: nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, name: Nemotron, args: "--reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --trust-remote-code"}
+hf/gpt-oss-20b: {hf: openai/gpt-oss-20b, name: ChatGPT, args: "--reasoning-parser openai_gptoss --tool-call-parser openai"}
+hf/ministral-3-14b-instruct-2512: {hf: mistralai/Ministral-3-14B-Instruct-2512, name: Mistral, args: "--tool-call-parser mistral --tokenizer-mode mistral --config-format mistral --load-format mistral"}
+hf/magistral-small-2509: {hf: mistralai/Magistral-Small-2509, name: Mistral, args: "--reasoning-parser mistral --tool-call-parser mistral --tokenizer-mode mistral --config-format mistral --load-format mistral"}
+hf/glm-4.7-flash: {hf: zai-org/GLM-4.7-Flash, name: GLM, args: "--reasoning-parser glm45 --tool-call-parser glm47"}
+hf/granite-4.2-30b: {hf: ibm-granite/granite-4.2-30b, name: Granite, args: "--reasoning-parser granite_thinking_parser --tool-call-parser qwen3_coder"}
+hf/granite-4.2-8b: {hf: ibm-granite/granite-4.2-8b, name: Granite, args: "--reasoning-parser granite_thinking_parser --tool-call-parser qwen3_coder"}
+hf/olmo-3.1-32b-instruct: {hf: allenai/Olmo-3.1-32B-Instruct, name: OLMo, args: "--tool-call-parser olmo3"}
+hf/lfm2.5-24b-a2b: {hf: LiquidAI/LFM2.5-24B-A2B, name: LFM, args: "--tool-call-parser lfm2"}
+hf/arete-27b: {hf: NousResearch/Arete-27B, name: Hermes, args: "--reasoning-parser qwen3 --tool-call-parser qwen3_coder"}
+hf/mimo-v2.6-distill-qwen-9b: {hf: XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B, name: MiMo, args: "--reasoning-parser mimo --tool-call-parser qwen3_coder"}
+hf/hy-memory-30b-a3b: {hf: tencent/Hy-Memory-30B-A3B, name: Hunyuan, args: "--reasoning-parser hy_v3 --tool-call-parser hy_v3 --trust-remote-code"}

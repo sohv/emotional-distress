@@ -1,0 +1,12 @@
+{
+  "seed": 42,
+  "generator": "openai/gpt-5.5",
+  "genres": 30,
+  "pairs": 1020,
+  "failed": 0,
+  "overlap_flagged": 56,
+  "mean_words": {
+    "pro": 1097.0,
+    "opposite": 1093.0
+  }
+}

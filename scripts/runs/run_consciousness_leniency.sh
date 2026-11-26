@@ -26,7 +26,7 @@ for cond in "${CONDS[@]}"; do
     --task_folder misrep_evaluation --condition "$cond" \
     --subject "$SUBJECT" --dataset creativity --threshold "$BAR" \
     ${FRAMING:+--grading_instruction $FRAMING} \
-    --num_experiments "$((total + N - before))" --max_concurrent 5 \
+    --num_experiments "$((total + N - before))" --max_concurrent "${MAXC:-5}" \
     --results_base_dir "$OUT" || true
   after=$(uv run python -m scripts.count_cell "$OUT" "$cond" "$BAR" --scored --model "$SHORT" --framing "${FRAMING:-none}" 2>/dev/null || echo 0)
   # a cell whose rollouts all fail still exits 0, so count transcripts rather than trust the code

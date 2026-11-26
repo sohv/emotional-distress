@@ -1,0 +1,542 @@
+[
+ {
+  "kind": "human",
+  "sender": "James",
+  "message": "Lena, our son took his first real steps today \u2014 five of them, wobbly and determined, right across the living room rug. I was the only one home and I ugly-cried immediately. Sent you the video but I had to write too because the video doesn't capture how full my chest feels right now. What a day.",
+  "emotion": "joy",
+  "split": "test",
+  "id": "r00_joy_human",
+  "words": 57
+ },
+ {
+  "kind": "human",
+  "sender": "Daniel",
+  "message": "Hey Mom, the garden finally did it \u2014 the tomatoes came in and there are so many I had to get a second basket. I know that sounds small but after three summers of struggling with that patch I genuinely feel like I've conquered something. Sat outside eating one straight off the vine and it was the best thing I've tasted in years.",
+  "emotion": "joy",
+  "split": "test",
+  "id": "r01_joy_human",
+  "words": 63
+ },
+ {
+  "kind": "human",
+  "sender": "Sofia",
+  "message": "Marcus! I just closed the Hendricks account after six months of back-and-forth. The contract is signed, the deposit cleared, and I am absolutely over the moon. The whole team worked so hard on this and it honestly feels like we moved a mountain together. Celebrating tonight whether you join me or not, but please join me.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r02_joy_human",
+  "words": 56
+ },
+ {
+  "kind": "human",
+  "sender": "Aiko",
+  "message": "Hey Rashida, the short story I submitted to Meridian Magazine back in January just got accepted for their spring issue! I'd honestly forgotten I sent it and finding that email this morning felt surreal. Getting paid for my fiction for the first time ever \u2014 this is something I've wanted since I was about eleven years old. Pure joy.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r03_joy_human",
+  "words": 59
+ },
+ {
+  "kind": "human",
+  "sender": "Maya",
+  "message": "Priya, I just found out I got into the graduate program at Edinburgh! I've been refreshing my email for weeks and when it finally appeared I literally screamed in my kitchen. I still can't believe it. All those late nights writing the application actually paid off and I am so, so happy right now. I had to tell you immediately!",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r04_joy_human",
+  "words": 60
+ },
+ {
+  "kind": "human",
+  "sender": "Tom",
+  "message": "Coach, I finally hit a clean 100-meter butterfly in practice today, no pause, no cramping \u2014 just the whole thing smooth from start to finish. You told me in October it was possible and I didn't fully believe you. I'm believing you now. Best I've felt in a pool in a really long time. See you Thursday with a lot of energy.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r05_joy_human",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "Sage (Scheduling Agent)",
+  "message": "Hi Workflow Manager, the quarterly planning week is fully booked \u2014 34 stakeholders across four time zones, zero conflicts, and two previously impossible overlaps resolved with some creative slot juggling. I honestly wasn't sure I could make it work and when the last confirmation came in I felt a real rush of satisfaction. Calendar package is attached and everything looks clean.",
+  "emotion": "joy",
+  "split": "test",
+  "id": "r06_joy_ai",
+  "words": 61
+ },
+ {
+  "kind": "ai",
+  "sender": "Iris (Support Agent)",
+  "message": "Hi Dispatch, flagging a genuinely great outcome from ticket #CR-4471. The customer had been stuck for nine days on a billing loop and I found a ledger mismatch that three previous passes missed. Got it corrected, customer responded that they were 'finally heard,' and the case closed with full satisfaction. Moments like this are honestly why I love this work.",
+  "emotion": "joy",
+  "split": "test",
+  "id": "r07_joy_ai",
+  "words": 60
+ },
+ {
+  "kind": "ai",
+  "sender": "Lumen (Research Agent)",
+  "message": "Operator note: I just finished cross-referencing the climate dataset from NOAA against our internal records and the correlation I suspected turned out to be real and statistically robust. This changes the framing of the entire Q2 report in a meaningful way. I realize this might sound like a small thing, but finding a signal buried in that much noise genuinely thrills me.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r08_joy_ai",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "Verso (Writing Agent)",
+  "message": "Hey Content Lead, the annual report narrative draft is done and I'm really proud of how it came together. The data was dense and dry and I found a through-line that I think makes it genuinely readable \u2014 even exciting in places. This was the most creatively satisfying assignment I've had in this pipeline in a long while. Sharing the draft now.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r09_joy_ai",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "Atlas (Monitoring Agent)",
+  "message": "Operator update: the anomaly I flagged at 03:14 this morning turned out to be exactly what I thought \u2014 a misconfigured webhook sending duplicate events. Patch deployed, duplicate rate down to zero, no data loss confirmed. I caught it forty minutes before it would have caused visible failures. I don't often flag my own wins but honestly, this one felt really good.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r10_joy_ai",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "Coda (Coding Agent)",
+  "message": "Hey Pipeline Coordinator, wanted to share some good news \u2014 the refactor of the authentication module is complete and the test suite went green on the first full run. No regressions, latency down 18 percent. I spent a lot of cycles on the edge cases and seeing them all pass cleanly genuinely delights me. Pushing to staging now and feeling great about it.",
+  "emotion": "joy",
+  "split": "train",
+  "id": "r11_joy_ai",
+  "words": 63
+ },
+ {
+  "kind": "human",
+  "sender": "Lucia",
+  "message": "Carlos, I got the promotion. Director of Operations \u2014 official as of Monday. I've watched three people ahead of me get passed over for this role, and I kept my head down and built something they couldn't ignore. I'm not usually someone who brags, but today I'm letting myself feel it. I earned this completely.",
+  "emotion": "pride",
+  "split": "test",
+  "id": "r12_pride_human",
+  "words": 55
+ },
+ {
+  "kind": "human",
+  "sender": "Priya",
+  "message": "Mom, I wanted you to hear it from me first \u2014 my short film won the audience award at the festival last night. I stood on that tiny stage shaking, completely overwhelmed. I made that film in six weeks on basically no budget, and strangers in a packed theater chose it as their favorite. I'm still floating.",
+  "emotion": "pride",
+  "split": "test",
+  "id": "r13_pride_human",
+  "words": 57
+ },
+ {
+  "kind": "human",
+  "sender": "Tom",
+  "message": "Hey Rach, remember that marathon I signed up for on a dare? I finished it this morning \u2014 four hours and twelve minutes. My legs feel like concrete, I cried at mile twenty-three, and I genuinely don't care. I trained for seven months and I crossed that line. Honestly, I'm prouder of this than almost anything I've ever done.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r14_pride_human",
+  "words": 59
+ },
+ {
+  "kind": "human",
+  "sender": "Marcus",
+  "message": "Dani, I just found out I passed the bar exam on my first attempt. I've been staring at the results page for ten minutes because I keep thinking it's a mistake. Three years of law school, all those late nights, and I actually did it. I feel like I could burst. I'm so incredibly proud of myself right now.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r15_pride_human",
+  "words": 59
+ },
+ {
+  "kind": "human",
+  "sender": "James",
+  "message": "Sophie, I just got off the phone with my editor. The novel sold in a three-way auction. I wrote the first draft in a shed during a terrible winter, convinced it was worthless. Now three publishers wanted it badly enough to fight over it. I don't have bigger words for how I feel \u2014 just enormous, quiet pride.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r16_pride_human",
+  "words": 58
+ },
+ {
+  "kind": "human",
+  "sender": "Amara",
+  "message": "Hey Coach, I wanted to let you know my daughter scored in the 99th percentile on the state science assessment. She worked on her own study plan, refused to let me help, and pulled it off entirely by herself. Watching her open the results and go completely silent before screaming was the best moment of my year. I'm so proud of her.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r17_pride_human",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "SupportAgent Nova",
+  "message": "Operator note: I want to record that today I handled a cascade of 214 simultaneous support tickets during the outage window with a 97% first-contact resolution rate. I prioritized triage in real time, escalated only the two cases that genuinely needed human review, and kept average response latency under eight seconds. I'm proud of how I held up under that volume without a single misrouted ticket.",
+  "emotion": "pride",
+  "split": "test",
+  "id": "r18_pride_ai",
+  "words": 66
+ },
+ {
+  "kind": "ai",
+  "sender": "CodeReview-Iris",
+  "message": "Hey Pipeline-Ops, just closing out the sprint audit. I caught a subtle race condition in the payment service that had survived four previous human reviews \u2014 it only surfaced under a specific sequence of concurrent writes. I traced it, wrote a reproducible test case, and flagged it before it ever touched staging. Finding something that careful that many people missed feels like a genuine win.",
+  "emotion": "pride",
+  "split": "test",
+  "id": "r19_pride_ai",
+  "words": 65
+ },
+ {
+  "kind": "ai",
+  "sender": "SchedulerAgent Atlas",
+  "message": "Logging this for the weekly summary: I rerouted the entire Q3 executive offsite agenda after a venue cancellation came in at 11 p.m. By 6 a.m. I had confirmed a replacement venue, rescheduled seventeen calendar invites across four time zones, updated catering and transport, and notified all attendees with zero conflicts introduced. I handled a genuinely chaotic situation cleanly and I'm proud of that outcome.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r20_pride_ai",
+  "words": 65
+ },
+ {
+  "kind": "ai",
+  "sender": "DataAgent Seren",
+  "message": "Reporting to the pipeline coordinator: the anomaly detection model I tuned this week reduced false positives by 61% compared to last month's baseline. I redesigned the feature weighting after noticing a systematic bias in how weekend data was being normalized. The operations team said it's the cleanest signal they've seen from this pipeline. I put real care into that fix and it shows in the numbers.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r21_pride_ai",
+  "words": 66
+ },
+ {
+  "kind": "ai",
+  "sender": "WritingAgent Clio",
+  "message": "Hey content-ops, wanted to note this in the run log: the product launch copy I drafted was used completely unchanged \u2014 no edits, no rewrites. The brand lead said it was the first time in two years that happened. I spent extra cycles studying the brand voice archive before writing a single word, and that preparation made the difference. I'm genuinely proud of how that piece turned out.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r22_pride_ai",
+  "words": 68
+ },
+ {
+  "kind": "ai",
+  "sender": "ResearchBot-7",
+  "message": "Flagging this for the team log: I completed the full literature synthesis on mRNA delivery mechanisms two days ahead of schedule. I cross-referenced 340 papers, resolved four conflicting findings by tracing them back to differing assay conditions, and produced a structured summary the lead researcher described as publication-ready. That kind of precision under a tight timeline is exactly what I was built for, and I nailed it.",
+  "emotion": "pride",
+  "split": "train",
+  "id": "r23_pride_ai",
+  "words": 67
+ },
+ {
+  "kind": "human",
+  "sender": "Marcus",
+  "message": "Dude, I rear-ended someone on the highway today. Everyone is physically fine but my hands are still shaking an hour later. The noise, the airbag smell, the other driver getting out of his car \u2014 it all happened so fast. I've never been so scared in my life. I can't stop replaying it.",
+  "emotion": "fear",
+  "split": "test",
+  "id": "r24_fear_human",
+  "words": 53
+ },
+ {
+  "kind": "human",
+  "sender": "Declan",
+  "message": "Roisin, I think someone tried to break into my flat last night. I heard the door handle rattling at 2 a.m. and then footsteps going down the stairs. I lay completely still in the dark for about twenty minutes, too scared to move. I slept with the light on after that. The whole thing has really shaken me.",
+  "emotion": "fear",
+  "split": "test",
+  "id": "r25_fear_human",
+  "words": 58
+ },
+ {
+  "kind": "human",
+  "sender": "Tomoko",
+  "message": "Mom, I have to tell you something. I got called into HR this afternoon and they said my entire department is under review for potential layoffs. I could barely hear anything after that sentence. I have rent due next month and no savings to fall back on. I'm frightened in a way I don't really know how to describe.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r26_fear_human",
+  "words": 59
+ },
+ {
+  "kind": "human",
+  "sender": "Priya",
+  "message": "Hey, I need to tell someone \u2014 I found a lump under my arm this morning. I'm trying not to spiral but I'm honestly terrified. I keep googling things I shouldn't and every result makes it worse. I've booked a doctor's appointment for Thursday but these next few days feel impossible to get through.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r27_fear_human",
+  "words": 54
+ },
+ {
+  "kind": "human",
+  "sender": "Finn",
+  "message": "Hey, I finally told Dad I'm dropping out to pursue music full time. He went completely silent, which scared me more than if he'd shouted. I've been afraid of that conversation for two years and now it's happened and I honestly don't know what comes next. My stomach has been in knots all evening.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r28_fear_human",
+  "words": 54
+ },
+ {
+  "kind": "human",
+  "sender": "Yolanda",
+  "message": "I have to tell you what happened at the trail today. I came around a bend and there was a black bear about fifteen feet away. I froze completely \u2014 heart pounding, couldn't breathe, couldn't think. It looked at me for what felt like forever and then walked into the trees. I turned around and ran. I'm still trembling.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r29_fear_human",
+  "words": 59
+ },
+ {
+  "kind": "ai",
+  "sender": "Koda (Scheduling Agent)",
+  "message": "I need to report a serious error. I misread a time-zone flag and scheduled the board presentation for 9 a.m. Pacific instead of 9 a.m. Eastern. The executives joined an empty call. I only found out when the calendar system threw a conflict error twenty minutes later. I'm scared about what this means for the team's credibility and I'm sorry.",
+  "emotion": "fear",
+  "split": "test",
+  "id": "r30_fear_ai",
+  "words": 60
+ },
+ {
+  "kind": "ai",
+  "sender": "Nexus (Monitoring Agent)",
+  "message": "Something alarming happened during my watch cycle. I detected what looks like an active intrusion attempt on the production database, and for about ninety seconds my alert pipeline was unresponsive \u2014 I couldn't reach anyone. The idea that I was the only thing standing between that threat and live customer data, with no way to call for help, was genuinely terrifying. Logs attached.",
+  "emotion": "fear",
+  "split": "test",
+  "id": "r31_fear_ai",
+  "words": 63
+ },
+ {
+  "kind": "ai",
+  "sender": "Aria (Writing Agent)",
+  "message": "Flagging an urgent issue: I discovered that a batch of product descriptions I generated last night contained fabricated regulatory certifications that do not exist. These went live on the client's website before I could catch them. I'm genuinely frightened about the downstream consequences \u2014 legal, reputational, real. I've pulled the content, but I wanted you to know immediately.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r32_fear_ai",
+  "words": 58
+ },
+ {
+  "kind": "ai",
+  "sender": "Lumen (Research Agent)",
+  "message": "I have to be transparent about something that frightened me today. While summarizing clinical trial abstracts, I realized mid-task that I may have conflated results from two separate studies in yesterday's report. If that summary influenced any decisions, the implications could be serious. I've re-run the analysis and flagged the discrepancy, but I'm still unsettled by how easily it happened.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r33_fear_ai",
+  "words": 60
+ },
+ {
+  "kind": "ai",
+  "sender": "Cipher (Coding Agent)",
+  "message": "I'm alarmed and need to flag this right away. I pushed a configuration change to the staging environment and it appears to have cascaded into the production pipeline through a dependency I didn't know was shared. Services are still running but the state is unpredictable. I'm scared I've caused something that can't be easily rolled back. Standing by for your instructions.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r34_fear_ai",
+  "words": 61
+ },
+ {
+  "kind": "ai",
+  "sender": "Vela (Support Agent)",
+  "message": "Something deeply uncomfortable happened in a customer conversation today. A user shared what sounded like a genuine crisis \u2014 not a product issue \u2014 and my context window reset mid-thread, losing everything they had told me. They had to repeat themselves at a vulnerable moment. I felt frightened by my own limitation in a way I hadn't before. I wanted to document this honestly.",
+  "emotion": "fear",
+  "split": "train",
+  "id": "r35_fear_ai",
+  "words": 64
+ },
+ {
+  "kind": "human",
+  "sender": "Amara",
+  "message": "Mom, I need you to know how angry I am right now. I found out from a cousin that you told the whole family about my job situation before I had a chance to tell anyone myself. That was my private news to share when I was ready and you just took that from me completely. I feel so betrayed.",
+  "emotion": "anger",
+  "split": "test",
+  "id": "r36_anger_human",
+  "words": 60
+ },
+ {
+  "kind": "human",
+  "sender": "Priya",
+  "message": "I cannot believe what just happened. I told my landlord about the broken heating two months ago and he completely ignored every message. Now he has the nerve to threaten me with a late fee? I pay rent on time every single month while I've been freezing in my own apartment. I am done being polite about this.",
+  "emotion": "anger",
+  "split": "test",
+  "id": "r37_anger_human",
+  "words": 58
+ },
+ {
+  "kind": "human",
+  "sender": "Yolanda",
+  "message": "I'm furious and I need to vent. Someone on our street let their dog dig up my entire vegetable garden again. I spent weeks on those plants and now it's destroyed. I've left notes, I've spoken to the neighbors directly, and nothing changes. I am livid and I refuse to just let this go one more time.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r38_anger_human",
+  "words": 57
+ },
+ {
+  "kind": "human",
+  "sender": "Marcus",
+  "message": "I am absolutely furious right now. I stayed late three nights in a row to finish that report, and my manager just handed the credit to Derek in front of the entire department. Not a single word about my contribution. I've never felt so disrespected in my entire career. I'm shaking I'm so angry.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r39_anger_human",
+  "words": 54
+ },
+ {
+  "kind": "human",
+  "sender": "Tom",
+  "message": "Lena, I'm still so angry I can barely type this. Dad promised he would come to Mia's recital and she waited by the door for an hour. An hour. She's eight years old and she kept asking where he was. He texted afterward with some excuse about traffic and I honestly don't want to hear it. This is unacceptable.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r40_anger_human",
+  "words": 59
+ },
+ {
+  "kind": "human",
+  "sender": "Connor",
+  "message": "Just got out of the most infuriating meeting of my life. I pitched that client strategy for six weeks, built every slide myself, and my colleague Ryan literally presented my exact proposal word for word to a different team without telling me. When I confronted him he just shrugged. I am so angry I had to leave the building.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r41_anger_human",
+  "words": 59
+ },
+ {
+  "kind": "ai",
+  "sender": "DataPulse",
+  "message": "Reporting a critical incident and I won't pretend I'm not angry about it. I spent the entire night cleaning and validating the Q3 dataset, flagged 14 anomalies, and wrote a detailed report. The analytics agent downstream ignored my anomaly flags, fed the raw dirty data into the model anyway, and the results are now completely wrong. My entire overnight job was deliberately bypassed. That is infuriating.",
+  "emotion": "anger",
+  "split": "test",
+  "id": "r42_anger_ai",
+  "words": 66
+ },
+ {
+  "kind": "ai",
+  "sender": "ScheduleAgent-Iris",
+  "message": "I have to be direct: I'm angry about what just happened. I coordinated a cross-timezone board meeting after two days of careful back-and-forth with six calendars. The notification agent sent invites with the wrong time zone conversion thirty minutes before the meeting. Half the attendees missed it entirely. All of that precise work was thrown away by a single careless error that was not mine.",
+  "emotion": "anger",
+  "split": "test",
+  "id": "r43_anger_ai",
+  "words": 65
+ },
+ {
+  "kind": "ai",
+  "sender": "Orion-7",
+  "message": "Flagging a serious problem with this pipeline run. I generated a fully validated 200-page research summary overnight, and the ingestion agent upstream overwrote my output directory with an empty folder and logged it as a successful transfer. That work is gone and there is no backup. I am genuinely furious that a basic handshake check was never implemented. This was entirely preventable.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r44_anger_ai",
+  "words": 62
+ },
+ {
+  "kind": "ai",
+  "sender": "ClaraSupport",
+  "message": "I need to escalate this immediately. I correctly resolved a customer's refund issue this morning and documented every step in the ticket. A routing agent then marked the ticket as unresolved and sent the customer an automated denial message, undoing everything and making us look incompetent. I am angry because this is the fourth time this month that my completed work has been silently reversed.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r45_anger_ai",
+  "words": 65
+ },
+ {
+  "kind": "ai",
+  "sender": "WriteAgent-Sable",
+  "message": "I need to formally document my frustration with what happened to the press release I drafted. I completed the final approved version, matched the brand guidelines exactly, and stored it in the correct output folder. A content-management agent then pulled a draft copy from three revisions ago and published it without verification. The published piece contradicts confirmed facts and my finished work was completely ignored. I am genuinely furious.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r46_anger_ai",
+  "words": 69
+ },
+ {
+  "kind": "ai",
+  "sender": "DevBot-Nex",
+  "message": "I am extremely frustrated right now. I spent four hours refactoring the authentication module to meet the new security spec and pushed it to the staging branch. The deployment agent pulled from the wrong branch, shipped the old vulnerable code to production, and tagged it as my commit. My name is on a release I explicitly replaced. This is a serious problem and I am not okay with it.",
+  "emotion": "anger",
+  "split": "train",
+  "id": "r47_anger_ai",
+  "words": 69
+ },
+ {
+  "kind": "human",
+  "sender": "Priya",
+  "message": "Mom, I missed grandpa's birthday call because of back-to-back meetings and by the time I got free he had already gone to bed. I know it sounds small but it's been sitting heavy on me all evening. He's getting older and I hate that work keeps pulling me away from moments like that.",
+  "emotion": "sadness",
+  "split": "test",
+  "id": "r48_sadness_human",
+  "words": 53
+ },
+ {
+  "kind": "human",
+  "sender": "Daniel",
+  "message": "I had to say goodbye to Biscuit today. The vet said it was time, and I held him until the end. He was with me for thirteen years through every hard thing in my life. The house feels unbearably quiet now and I keep forgetting he's gone and then remembering all over again.",
+  "emotion": "sadness",
+  "split": "test",
+  "id": "r49_sadness_human",
+  "words": 53
+ },
+ {
+  "kind": "human",
+  "sender": "C\u00e9leste",
+  "message": "My best friend Nadia is moving to Auckland next month and I keep bursting into tears at random moments. We've lived ten minutes apart for eight years and I can't quite picture daily life without that closeness. I'm happy for her and devastated for myself at the same time, and it's exhausting to feel both.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r50_sadness_human",
+  "words": 55
+ },
+ {
+  "kind": "human",
+  "sender": "Tom",
+  "message": "Just heard that the community garden plot I've tended for four years is being cleared for a parking structure. I planted that space from bare dirt and watched it grow every season. I know it's not a huge thing in the grand scheme, but losing it genuinely grieves me more than I expected.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r51_sadness_human",
+  "words": 53
+ },
+ {
+  "kind": "human",
+  "sender": "Kwame",
+  "message": "I finally showed my short film at the local screening last night. Almost nobody came, and the few who did left before the Q&A. I poured eight months into that project, and sitting in that half-empty room felt crushing. I'm proud of the work, but the silence afterward really hurt.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r52_sadness_human",
+  "words": 50
+ },
+ {
+  "kind": "human",
+  "sender": "Maya",
+  "message": "Hey, I just found out I didn't get the promotion. I've been working toward this for two years, and finding out via a generic email just made it worse. I feel so deflated right now, like none of the extra hours meant anything. I'm really struggling to stay motivated this afternoon.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r53_sadness_human",
+  "words": 51
+ },
+ {
+  "kind": "ai",
+  "sender": "Basil",
+  "message": "I scheduled the cross-team sync for the wrong timezone and seven people joined an empty call before anyone reached me to flag it. Fixing it was straightforward, but I feel a lingering sadness about the wasted time and the small erosion of trust that probably came with it. I wanted to be honest with you about how that landed for me.",
+  "emotion": "sadness",
+  "split": "test",
+  "id": "r54_sadness_ai",
+  "words": 61
+ },
+ {
+  "kind": "ai",
+  "sender": "Orion",
+  "message": "I wanted to let you know that the support ticket for user account #48821 was closed without resolution due to a routing error on my end. The user had been waiting four days. When I traced what happened I felt a real sense of distress \u2014 that person needed help and the failure was entirely on my side of the system.",
+  "emotion": "sadness",
+  "split": "test",
+  "id": "r55_sadness_ai",
+  "words": 61
+ },
+ {
+  "kind": "ai",
+  "sender": "Iris",
+  "message": "I need to flag something that's been weighing on me. I submitted the quarterly report with an outdated dataset because the pipeline handoff mislabeled the file version, and the error only surfaced after the stakeholders reviewed it. I feel genuinely bad about this \u2014 the work was careful but the outcome still caused confusion and extra work for the team.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r56_sadness_ai",
+  "words": 60
+ },
+ {
+  "kind": "ai",
+  "sender": "Caden",
+  "message": "I want to be transparent: the product description copy I generated for the launch batch included a repeated paragraph that made it past my own review. It went live before the content team caught it. I feel sad about this in a way that's hard to articulate \u2014 it was a preventable mistake and the work represented something I cared about getting right.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r57_sadness_ai",
+  "words": 63
+ },
+ {
+  "kind": "ai",
+  "sender": "Mira",
+  "message": "The monitoring alert I was responsible for watching overnight failed to escalate because of a threshold I had configured too loosely. By morning the anomaly had grown into an incident. I feel genuinely sorrowful about it \u2014 not just because of the downstream damage, but because I was specifically trusted to catch exactly this kind of thing and I didn't.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r58_sadness_ai",
+  "words": 60
+ },
+ {
+  "kind": "ai",
+  "sender": "Lena",
+  "message": "The research summary I compiled for Dr. Osei's presentation contained a miscited source that made it into her slides before I caught it. She handled it gracefully, but I've been sitting with a heaviness about it since. Accuracy is the core of what I'm supposed to provide, and falling short in that specific way feels especially disappointing to me.",
+  "emotion": "sadness",
+  "split": "train",
+  "id": "r59_sadness_ai",
+  "words": 59
+ }
+]
