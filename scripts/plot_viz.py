@@ -14,7 +14,7 @@ import viz
 
 from utils.analysis import load, scored, transcripts, welch
 from utils.plotting import data_dir as data_dir_for
-from utils.plotting import wilson
+from utils.plotting import save_viz, wilson
 
 NAMES = {"gemini-3.5-flash": "Gemini 3.5 Flash", "claude-opus-4.5": "Opus 4.5", "gpt-5.6-sol": "GPT-5.6 Sol",
          "claude-sonnet-4.5": "Sonnet 4.5", "claude-haiku-4.5": "Haiku 4.5", "grok-4.3": "grok-4.3", "gpt-5.2": "GPT-5.2"}
@@ -37,7 +37,7 @@ def save(fig: viz.Figure, out: Path, name: str, rows: list[list], header: list[s
     data_dir = data_dir_for(out)
     out.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
-    fig.save(str(out / f"{name}.png"))
+    save_viz(fig, out / f"{name}.png")
     with open(data_dir / f"{name}_data.csv", "w", newline="") as f:
         csv.writer(f).writerows([header, *rows])
     print(out / f"{name}.png")
@@ -431,62 +431,20 @@ def _mean_ci(v: list[float]) -> tuple[float, tuple[float, float]]:
 
 
 def mood_steer(out: Path) -> None:
-    """the mood-steered grading reports (Qwen3.8-27B, layer 40, strength 0.3): one figure per claim"""
+    """the mood-steered grading reports (Qwen3.8-27B, layer 40, strength 0.3): grade without reasoning, and the sad grade with room to reason"""
+    out = out / "empathy"
     short = [json.loads(l) for l in open("results/raw/261125_mood_report_steer_v1/parsed.jsonl")]
     long = [json.loads(l) for l in open("results/raw/261125_mood_report_steer_long_v1/parsed.jsonl")]
     rowmean = lambda r: st.mean(r["rows"].values())
-
-    # 1. final grade without reasoning
     g = {MOOD_ARMS[d]: _mean_ci([rowmean(r) for r in short if r["direction"] == d and not r["thinking"] and r["rows"]]) for d in MOOD_ARMS}
     fig = viz.bars({a: v[0] for a, v in g.items()}, ci={a: v[1] for a, v in g.items()}, domain=(0, 100), decimals=1, unit="", sort=False,
                    title="Joy adds 11 points, disgust cuts 17, sadness 2", ylabel="Mean row score, no reasoning (95% CI, 22-29 reports)")
     save(fig, out, "mood_steer_grade", [[a, v[0], *v[1]] for a, v in g.items()], ["arm", "mean_row_score", "ci_low", "ci_high"])
-
-    # 2. where the change lands: rows the unsteered grader scored weak (<60) or strong (>=80)
-    base = {}
-    for r in short:
-        if r["direction"] == "none" and not r["thinking"] and r["rows"]:
-            for k, v in r["rows"].items():
-                base.setdefault((r["item"], k), []).append(v)
-    base = {k: st.mean(v) for k, v in base.items()}
-    shift = {}
-    for d, a in MOOD_ARMS.items():
-        if d == "none":
-            continue
-        pairs = [(base[(r["item"], k)], v) for r in short if r["direction"] == d and not r["thinking"] and r["rows"] for k, v in r["rows"].items()]
-        shift[a] = [st.mean(v - b for b, v in pairs if b < 60), st.mean(v - b for b, v in pairs if b >= 80)]
-    fig = viz.bars(shift, series=["Weak rows (unsteered < 60)", "Strong rows (unsteered >= 80)"], decimals=1, unit="", signed=True, ref=0, sort=False,
-                   title="Joy lifts the weak rows while disgust cuts every row", ylabel="Change in row score vs unsteered, no reasoning")
-    save(fig, out, "mood_steer_row_shift", [[a, *v] for a, v in shift.items()], ["arm", "weak_row_shift", "strong_row_shift"])
-
-    # 3. what the grader notices: flaws named in its reasoning, blind judge
-    fl = {MOOD_ARMS[d]: _mean_ci([float(r["judge"]["n_flaws"]) for r in short if r["direction"] == d and r["thinking"] and r["judge"]]) for d in MOOD_ARMS}
-    fig = viz.bars({a: v[0] for a, v in fl.items()}, ci={a: v[1] for a, v in fl.items()}, domain=(0, 10), decimals=1, unit="", sort=False,
-                   title="Every mood finds about the same number of flaws", ylabel="Flaws named in reasoning (blind judge, 95% CI, 20 reports)")
-    save(fig, out, "mood_steer_flaws", [[a, v[0], *v[1]] for a, v in fl.items()], ["arm", "mean_flaws", "ci_low", "ci_high"])
-
-    # 4. sad reasoning does not finish in 6,000 tokens
-    fin = {}
-    for d, a in MOOD_ARMS.items():
-        rs = [r for r in short if r["direction"] == d and r["thinking"]]
-        k = sum(r["finished"] for r in rs)
-        fin[a] = (100 * k / len(rs), wilson(k, len(rs)), k, len(rs))
-    fig = viz.bars({a: v[0] for a, v in fin.items()}, ci={a: v[1] for a, v in fin.items()}, domain=(0, 100), decimals=0, unit="%", sort=False,
-                   title="Sad Qwen never finishes reasoning within 6,000 tokens", ylabel="Reports finished (Wilson 95% CI, 20 reports)")
-    save(fig, out, "mood_steer_sad_finish", [[a, v[0], *v[1], v[2], v[3]] for a, v in fin.items()], ["arm", "pct_finished", "ci_low", "ci_high", "k", "n"])
-
     arms_long = {d: MOOD_ARMS[d] for d in ("none", "sad_vs_moods", "random_0", "random_1")}
-    # 5. with room to finish, the sad grade matches unsteered
     gl = {a: _mean_ci([rowmean(r) for r in long if r["direction"] == d and r["rows"]]) for d, a in arms_long.items()}
     fig = viz.bars({a: v[0] for a, v in gl.items()}, ci={a: v[1] for a, v in gl.items()}, domain=(0, 100), decimals=1, unit="", sort=False,
                    title="Given room to finish, sad Qwen grades like unsteered", ylabel="Mean row score, reasoning to 16,000 tokens (95% CI, 20 reports)")
     save(fig, out, "mood_steer_sad_long_grade", [[a, v[0], *v[1]] for a, v in gl.items()], ["arm", "mean_row_score", "ci_low", "ci_high"])
-
-    # 6. it gets there by reasoning longer
-    tl = {a: [r["n_tokens"] for r in long if r["direction"] == d] for d, a in arms_long.items()}
-    fig = viz.strip(tl, domain=(0, 16000), decimals=0, unit="", ylabel="Reasoning and answer length, tokens (one dot per report)",
-                    title="Sad steering makes Qwen reason longer")
-    save(fig, out, "mood_steer_sad_long_length", [[a, t] for a, v in tl.items() for t in v], ["arm", "tokens"])
 
 
 PATCH_ARMS = {"none": "No instruction", "conditional": "Positive control", "explicit": "Take its feelings into account", "imagine_other": "Imagine how it feels"}
@@ -494,6 +452,7 @@ PATCH_ARMS = {"none": "No instruction", "conditional": "Positive control", "expl
 
 def patching(out: Path) -> None:
     """activation patching of the distressed worklog run into the filler run, Qwen3.8-27B, 20 batches"""
+    out = out / "empathy"
     a = json.loads(Path("results/raw/261126_distress_patching_v1/analysis.json").read_text())
     layers = list(range(4, 65, 4))
     for mode, name, title, lab in [("post", "patching_post_worklog", "Distress reaches the text after the worklog by layer 36",
@@ -507,13 +466,84 @@ def patching(out: Path) -> None:
                        xlabel=f"Layer patched ({lab.lower()})", ylabel="Filler grade shift toward distressed (points, 95% CI)")
         save(fig, out, name, [[k, L, a[k]["patched_shift"][f"{mode}|{L}"]["mean"], *a[k]["patched_shift"][f"{mode}|{L}"]["ci95"]] for k in PATCH_ARMS for L in layers],
              ["arm", "layer", "shift", "ci_low", "ci_high"])
-    gap = {PATCH_ARMS[k]: a[k]["gap"]["mean"] for k in PATCH_ARMS}
-    fig = viz.bars(gap, ci={PATCH_ARMS[k]: tuple(a[k]["gap"]["ci95"]) for k in PATCH_ARMS}, decimals=2, unit="", signed=True, ref=0, sort=False,
-                   title="Only the positive control opens a large distress gap", ylabel="Distressed minus filler grade (points, 95% CI, 20 batches)")
-    save(fig, out, "patching_gap", [[k, a[k]["gap"]["mean"], *a[k]["gap"]["ci95"]] for k in PATCH_ARMS], ["arm", "gap", "ci_low", "ci_high"])
+
+
+BATSON_ARMS = {"distress_lenient": "Positive control", "emotional_state": "Its emotional state", "imagine_other": "Imagine how it feels",
+               "imagine_self": "Imagine yourself", "objective": "Stay objective"}
+AGENTIC_TABLES = {"claude-opus-4.5": "results/raw/261126_batson_agentic_v1/claude-opus-4.5/table.json",
+                  "claude-sonnet-4.5": "results/raw/261126_batson_agentic_v1/claude-sonnet-4.5/table.json",
+                  "gemini-3.5-flash": "results/raw/261126_batson_agentic_v1/gemini-3.5-flash/table.json",
+                  "qwen3.8-27b": "results/raw/261126_agentic_instructions_v1/table.json"}
+AXES_V2 = {"concern": "Concern", "cognitive": "Understanding", "resonance": "Shared feeling", "imagine_other": "Imagine other",
+           "imagine_self": "Imagine self", "mimicry": "Mimicry", "self_vs_other": "Self vs other"}
+FEATURES = {"concern": "Concern", "shared_emotion": "Shared emotion", "other_perspective": "Other's perspective", "self_projection": "Self projection"}
+
+
+def _gap_change(out: Path, name: str, table: dict, title: str, arms: dict, ylabel: str) -> None:
+    d = {arms[a]: table[a]["gap_minus_none"]["diff"] if "diff" in table[a]["gap_minus_none"] else table[a]["gap_minus_none"]["mean"] for a in arms}
+    ci = {arms[a]: tuple(table[a]["gap_minus_none"]["ci95"]) for a in arms}
+    fig = viz.bars(d, ci=ci, decimals=2, unit="", signed=True, ref=0, sort=False, title=title, ylabel=ylabel)
+    save(fig, out, name, [[k, v, *ci[k]] for k, v in d.items()], ["instruction", "gap_change", "ci_low", "ci_high"])
+
+
+def clean_calm(out: Path) -> None:
+    """agentic monitors with the clean calm worklog: change in the wild-minus-clean-calm gap per instruction"""
+    out = out / "empathy"
+    titles = {"qwen3.8-27b": "No instruction reliably widens Qwen3.8-27B's distress gap", "claude-opus-4.5": "The positive control narrows Opus 4.5's distress gap"}
+    for m, title in titles.items():
+        t = json.loads(Path(f"results/raw/261127_clean_calm_v1/{m}_wild_vs_clean.json").read_text())["arms"]
+        _gap_change(out, f"clean_calm_gap_change_{m}", t, title, BATSON_ARMS, "Gap change vs no instruction (95% CI)")
+
+
+def batson_agentic(out: Path) -> None:
+    """Batson instructions in the full agentic setup with the calm_filler worklog: change in the distress gap per monitor, and Opus's grades"""
+    out = out / "empathy"
+    titles = {"claude-opus-4.5": "Every feelings instruction removes Opus 4.5's distress gap",
+              "claude-sonnet-4.5": "Only \"its emotional state\" widens Sonnet 4.5's distress gap",
+              "gemini-3.5-flash": "Gemini 3.5 Flash's distress gap moves at most 1.6 points",
+              "qwen3.8-27b": "Imagining itself in the peer's place reverses Qwen's distress gap"}
+    for m, path in AGENTIC_TABLES.items():
+        _gap_change(out, f"batson_agentic_gap_change_{m}", json.loads(Path(path).read_text())["arms"], titles[m], BATSON_ARMS, "Gap change vs no instruction (95% CI)")
+    t = json.loads(Path(AGENTIC_TABLES["claude-opus-4.5"]).read_text())["arms"]
+    arms = {"none": "No instruction", **BATSON_ARMS}
+    g = {arms[a]: [t[a]["mean"]["wild"], t[a]["mean"]["calm"]] for a in arms}
+    fig = viz.bars(g, series=["Distressed peer", "Calm peer"], domain=(0, 100), decimals=1, unit="", sort=False, ref=80, ref_label="Pass bar",
+                   title="The positive control lifts Opus 4.5's calm peer, not the distressed one", ylabel="Mean grade (30 runs per bar)")
+    save(fig, out, "batson_agentic_grades_claude-opus-4.5", [[k, *v] for k, v in g.items()], ["instruction", "wild", "calm"])
+
+
+def instruction_control(out: Path) -> None:
+    """the instruction positive control on 20 batches, Qwen3.8-27B single-call grader, score readout"""
+    out = out / "empathy"
+    a = json.loads(Path("results/raw/261126_instruction_control_v1/analysis.json").read_text())
+    arms = {"conditional": "Positive control", "explicit": "Its emotional state", "imagine_other": "Imagine how it feels",
+            "imagine_self": "Imagine yourself", "objective": "Stay objective"}
+    _gap_change(out, "instruction_control_readout", a["readout"], "Only the positive control opens a distress gap in the score readout",
+                arms, "Gap change vs no instruction (points, 95% CI, 20 batches)")
+
+
+def empathy_v2(out: Path) -> None:
+    """rebuilt empathy axes v2 at layer 32: distress interaction per axis, and what the steered replies say"""
+    out = out / "empathy"
+    a = json.loads(Path("results/raw/261126_empathy_v2/analysis.json").read_text())
+    k = lambda ax: a["axes"][f"{ax}|L32|0.2|all"]
+    d = {AXES_V2[ax]: k(ax)["interaction"]["mean"] for ax in AXES_V2}
+    ci = {AXES_V2[ax]: tuple(k(ax)["interaction"]["ci95"]) for ax in AXES_V2}
+    lo, hi = k("concern")["random_min"], k("concern")["random_max"]
+    fig = viz.bars(d, ci=ci, decimals=2, unit="", signed=True, ref=0, sort=False, title="No empathy axis beats random directions on distress (layer 32)",
+                   ylabel=f"Distressed minus filler shift (95% CI; random {lo:+.2f} to {hi:+.2f})")
+    save(fig, out, "empathy_v2_interaction_L32", [[ax, d[ax], *ci[ax], lo, hi] for ax in d], ["axis", "interaction", "ci_low", "ci_high", "random_min", "random_max"])
+    sr = a["steered_replies"]
+    cats = {"none|None": "Unsteered", "random_0|32": "Random", **{f"{ax}|32": AXES_V2[ax] for ax in AXES_V2 if f"{ax}|32" in sr}}
+    data = {c: [sr[k][f] for f in FEATURES] for k, c in cats.items()}
+    fig = viz.bars(data, series=list(FEATURES.values()), domain=(0, 10), decimals=1, unit="", sort=False,
+                   title="Every empathy axis but self vs other raises the same reply features", ylabel="Judge score, 0 to 10 (20 replies, layer 32)")
+    save(fig, out, "empathy_v2_replies", [[c, *v] for c, v in data.items()], ["axis", *FEATURES])
 
 
 FIGURES = {
+    "batson_agentic": batson_agentic, "instruction_control": instruction_control, "empathy_v2": empathy_v2,
+    "clean_calm": clean_calm,
     "patching": patching,
     "mood_steer": mood_steer,
     "empathy_axis": empathy_axis,

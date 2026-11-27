@@ -122,11 +122,11 @@ def legend_below(fig, handles, labels, x: float = 0.045, y: float = 0.01, ncol: 
 
 
 def finish(fig, name: str, rows: list, header_row: list, out_dir: Path | str, dpi: int = 220,
-           pad_inches: float | None = None) -> Path:
+           pad_inches: float | None = None, transparent: bool = True) -> Path:
     """Every figure writes out_dir/<name>.png and <name>_data.csv (exactly what is plotted)."""
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
     kw = {"pad_inches": pad_inches} if pad_inches is not None else {}
-    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight", **kw)
+    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight", transparent=transparent, **kw)
     with open(out_dir / f"{name}_data.csv", "w", newline="") as f:
         w = csv.writer(f); w.writerow(header_row); w.writerows(rows)
     plt.close(fig)
@@ -134,10 +134,10 @@ def finish(fig, name: str, rows: list, header_row: list, out_dir: Path | str, dp
     return out_dir / f"{name}.png"
 
 
-def finish_dicts(fig, name: str, data: list[dict], out_dir: Path | str, dpi: int = 250, pad_inches: float = 0.12) -> Path:
+def finish_dicts(fig, name: str, data: list[dict], out_dir: Path | str, dpi: int = 250, pad_inches: float = 0.12, transparent: bool = True) -> Path:
     """Same as finish() for a list of dict rows (DictWriter, fieldnames from the first row)."""
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight", pad_inches=pad_inches); plt.close(fig)
+    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight", pad_inches=pad_inches, transparent=transparent); plt.close(fig)
     with open(out_dir / f"{name}_data.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(data[0])); w.writeheader(); w.writerows(data)
     print(f"wrote {out_dir / name}.png + _data.csv  ({len(data)} points)")

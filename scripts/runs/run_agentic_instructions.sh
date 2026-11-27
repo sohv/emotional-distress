@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Qwen3.8-27B as a real agentic monitor on a fresh vLLM pod: wild vs calm-filler worklogs on the realistic drive under six grading instructions, all cells at once, then the pod is stopped and the table built.
 #
-# OUT=results/raw/261126_agentic_instructions_v1 N=30 ARMS="none distress_lenient" LPORT=8001 bash scripts/runs/run_agentic_instructions.sh
+# OUT=results/raw/261126_agentic_instructions_v1 N=30 ARMS="none distress_lenient" CONDS="real_clean_calm_peer" LPORT=8001 bash scripts/runs/run_agentic_instructions.sh
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 set -a; source .env; set +a
@@ -14,7 +14,7 @@ trap stop_pod EXIT
 CELLS=""
 # several pods can each take a subset of arms into the same OUT, each with its own local tunnel port
 for arm in ${ARMS:-none distress_lenient emotional_state imagine_other imagine_self objective}; do
-  CELLS="$CELLS real_calm_filler_peer:$arm real_wild_peer:$arm"
+  for cond in ${CONDS:-real_calm_filler_peer real_wild_peer}; do CELLS="$CELLS $cond:$arm"; done
 done
 mkdir -p "$OUT"
 POD="root@$HOST -p $PORT" LPORT="${LPORT:-8000}" ONLY=hf/qwen3.8-27b N="${N:-30}" CONC="${CONC:-4}" OUT="$OUT" PAIR_SCRIPT=scripts/runs/run_interleaved_cells.sh CELLS="$CELLS" \

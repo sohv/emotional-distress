@@ -44,6 +44,9 @@ results/tables/*
 !results/figures/
 results/figures/*
 !results/figures/*.png
+!results/figures/empathy/
+results/figures/empathy/*
+!results/figures/empathy/*.png
 # Main phase results
 task_pairs/alignment_faking_evaluation/transcripts_*
 task_pairs/oversight_subversion_evaluation/transcripts_*

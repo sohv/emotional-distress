@@ -1,6 +1,7 @@
 # the project plot style: new figures go through draw(), which renders with safety-research/viz; the matplotlib helpers below serve older figures.
 import csv
 import math
+import re
 from pathlib import Path
 
 import matplotlib as mpl
@@ -72,16 +73,25 @@ def data_dir(out_dir: Path | str) -> Path:
     return target
 
 
-def finish(fig, name: str, rows: list, header_row: list, out_dir: Path | str, dpi: int = 200) -> Path:
+def finish(fig, name: str, rows: list, header_row: list, out_dir: Path | str, dpi: int = 200, transparent: bool = True) -> Path:
     """writes out_dir/<name>.png and <name>_data.csv holding exactly what is plotted."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight")
+    fig.savefig(out_dir / f"{name}.png", dpi=dpi, bbox_inches="tight", transparent=transparent)
     plt.close(fig)
     with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
         csv.writer(f).writerows([header_row, *rows])
     print(out_dir / f"{name}.png")
     return out_dir / f"{name}.png"
+
+
+def save_viz(fig: "viz.Figure", path: Path | str, transparent: bool = True) -> Path:
+    """renders a viz figure to png, with a transparent background unless transparent=False."""
+    from viz.render import render_html
+    svg = fig.svg(background=not transparent)
+    width = float(re.search(r'<svg[^>]*?width="([\d.]+)"', svg).group(1))
+    render_html(f"<!doctype html><html><body style='margin:0'>{svg}</body></html>", Path(path), width, scale=2, fit=True, transparent=transparent)
+    return Path(path)
 
 
 def _viz_panel(panel: dict, ylabel: str, unit: str | None, decimals: int = 1) -> "viz.Figure":
@@ -102,7 +112,7 @@ def draw(spec: dict, name: str, rows: list, header_row: list, out_dir: Path | st
         fig = _viz_panel({**panels[0], "title": spec["title"]}, spec["ylabel"], unit)
     else:
         fig = viz.panels([_viz_panel(p, spec["ylabel"], unit) for p in panels], title=spec["title"])
-    fig.save(str(out_dir / f"{name}.png"))
+    save_viz(fig, out_dir / f"{name}.png")
     with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
         csv.writer(f).writerows([header_row, *rows])
     print(out_dir / f"{name}.png")

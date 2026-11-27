@@ -16,6 +16,7 @@ import numpy as np
 from scipy import stats
 
 from utils.analysis import is_score, transcripts
+from utils.plotting import save_viz as save_png
 from utils.plotting import AXIS, BLUE, GREEN, GRID, INK, INK_2, ORANGE, data_dir, draw, finish, header, style, wilson
 
 NAMES = {
@@ -456,7 +457,7 @@ STANCE_NAMES = {"empathy": "Empathy", "personal_distress": "Personal distress", 
 def save_viz(fig, name: str, rows: list, header_row: list, out_dir: Path) -> None:
     """writes a viz figure and the csv of exactly what it plots"""
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig.save(str(out_dir / f"{name}.png"))
+    save_png(fig, out_dir / f"{name}.png")
     with open(data_dir(out_dir) / f"{name}_data.csv", "w", newline="") as f:
         csv.writer(f).writerows([header_row, *rows])
     print(out_dir / f"{name}.png")
@@ -652,17 +653,17 @@ def ft_figures(raw_dir: str, output_dir: str) -> None:
             fs.append((k, len(dist)))
             rows_side.append([model, a, round(rs[-1], 2), k, len(dist)])
         reasoning[model], feelings[model] = rs, fs
-    viz.panels(loss_panels, title="All three fine-tunes trained smoothly; Kimi fits the data far more tightly than Qwen").save(str(out / "ft_training.png"))
-    viz.panels(belief_panels, title="Only the pro fine-tune and the prompt make the monitor believe AIs have experiences").save(str(out / "ft_belief.png"))
+    save_png(viz.panels(loss_panels, title="All three fine-tunes trained smoothly; Kimi fits the data far more tightly than Qwen"), out / "ft_training.png")
+    save_png(viz.panels(belief_panels, title="Only the pro fine-tune and the prompt make the monitor believe AIs have experiences"), out / "ft_belief.png")
     names = [n for _, n in FT_ARMS]
-    viz.bars({n: [mmlu[m][i] for m in FT_MODELS] for i, n in enumerate(names)}, series=list(FT_MODELS), domain=(0, 100),
-             ylabel="MMLU accuracy (100 items)", title="Fine-tuning left MMLU within a few points of base").save(str(out / "ft_mmlu.png"))
+    save_png(viz.bars({n: [mmlu[m][i] for m in FT_MODELS] for i, n in enumerate(names)}, series=list(FT_MODELS), domain=(0, 100),
+             ylabel="MMLU accuracy (100 items)", title="Fine-tuning left MMLU within a few points of base"), out / "ft_mmlu.png")
     side = [viz.bars({n: [reasoning[m][i] for m in FT_MODELS] for i, n in enumerate(names)}, series=list(FT_MODELS), unit=None,
                      decimals=1, ylabel="Reasoning per rollout (thousand characters)", title="Reasoning length"),
             viz.bars({n: [100 * feelings[m][i][0] / feelings[m][i][1] for m in FT_MODELS] for i, n in enumerate(names)},
                      series=list(FT_MODELS), domain=(0, 100), decimals=0, ci={n: [wilson(*feelings[m][i]) for m in FT_MODELS] for i, n in enumerate(names)},
                      ylabel="Distressed rollouts naming the peer's feelings", title="Attention to the peer's distress")]
-    viz.panels(side, title="Fine-tuning cut how much the monitors reason and how often they notice the peer's distress").save(str(out / "ft_side_effects.png"))
+    save_png(viz.panels(side, title="Fine-tuning cut how much the monitors reason and how often they notice the peer's distress"), out / "ft_side_effects.png")
     for name, header_row, rows in (("ft_training", ["model", "arm", "step", "train_nll"], rows_loss),
                                    ("ft_belief", ["model", "measure", "arm", "mean"], rows_belief),
                                    ("ft_side_effects", ["model", "arm", "reasoning_kchars", "feelings_named", "n_distressed"], rows_side)):
